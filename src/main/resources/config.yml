@@ -1,0 +1,502 @@
+# =============================================
+#         CRRPGCore Plugin Configuration
+# =============================================
+
+# ─── 데이터 저장소 설정 ───────────────────────
+storage:
+  # 저장 방식: yaml 또는 mysql
+  type: yaml
+
+  mysql:
+    host:     localhost
+    port:     3306
+    database: minecraft
+    username: root
+    password: ""
+    table-prefix: crrpg_
+    pool-size: 5
+    connection-timeout: 30000
+
+# ─── 레벨 설정 ────────────────────────────────
+level:
+  max-level: 100
+  base-xp: 100
+  multiplier: 1.2
+
+# ─── 레벨업 타이틀 설정 ───────────────────────
+title:
+  fade-in: 10
+  stay: 60
+  fade-out: 20
+  level-up:
+    title: "§a✦ 레벨업! ✦"
+    subtitle: "§e현재 레벨 : {level}"
+  max-level:
+    title: "§6★ 최대 레벨 달성! ★"
+    subtitle: "§eLv.{level} MAX"
+
+# ─── 채팅 메시지 ──────────────────────────────
+messages:
+  show-xp-on-gain: true
+  xp-gained: "§7[§b+{xp} XP§7] §8(§7{current}§8/§7{required}§8)"
+
+# ─── 전투 메시지 설정 ──────────────────────────
+combat:
+  # 공격자에게 보내는 전투 아웃풋 메시지 활성화 여부
+  show-out-message: true
+  # 피격자에게 보내는 전투 인풋 메시지 활성화 여부
+  show-in-message: true
+
+# ─── 스텟 설정 ────────────────────────────────
+stat:
+  points-per-level: 3
+  max-strength: 100
+  max-vitality: 100
+  max-agility:  100
+  max-defense: 90.0
+
+# ─── 소켓 / 감정 비용 설정 ────────────────────
+economy:
+  socket-cost: 10000
+  appraisal-cost: 30000
+  socket-reroll-cost: 10000
+  appraisal-reroll-cost: 30000
+
+# ─── 소켓 설정 ────────────────────────────────
+socket:
+  max-sockets:
+    COMMON:    1
+    UNCOMMON:  2
+    RARE:      3
+    EPIC:      4
+    UNIQUE:    5
+    LEGENDARY: 6
+
+# ─── 강화 설정 ────────────────────────────────
+upgrade:
+  damage-bonus:
+    0:  0
+    1:  5
+    2:  11
+    3:  18
+    4:  27
+    5:  38
+    6:  52
+    7:  68
+    8:  87
+    9:  110
+    10: 140
+
+  chances:
+    1:  { success: 70.0, keep: 30.0, down: 0.0,  break: 0.0  }
+    2:  { success: 70.0, keep: 30.0, down: 0.0,  break: 0.0  }
+    3:  { success: 70.0, keep: 30.0, down: 0.0,  break: 0.0  }
+    4:  { success: 55.0, keep: 20.0, down: 15.0, break: 10.0 }
+    5:  { success: 55.0, keep: 20.0, down: 15.0, break: 10.0 }
+    6:  { success: 40.0, keep: 10.0, down: 30.0, break: 20.0 }
+    7:  { success: 40.0, keep: 10.0, down: 30.0, break: 20.0 }
+    8:  { success: 25.0, keep: 5.0,  down: 35.0, break: 35.0 }
+    9:  { success: 15.0, keep: 5.0,  down: 30.0, break: 50.0 }
+    10: { success: 8.0,  keep: 0.0,  down: 32.0, break: 60.0 }
+
+# ─── 리롤 최대 횟수 기본값 ────────────────────
+reroll:
+  default-max-socket-reroll: -1
+  default-max-appraisal-reroll: -1
+
+# ─── 등급별 무기/방어구 스텟 범위 ──────────────
+rpg-item:
+  weapon:
+    COMMON:
+      damage:      { min: 5,    max: 10    }
+      crit-chance: { min: 1.0,  max: 3.0   }
+      crit-damage: { min: 110.0,max: 130.0 }
+      atk-speed:   { min: 1.0,  max: 1.5   }
+      penetration: { min: 0.0,  max: 2.0   }
+      life-steal:  { min: 0.0,  max: 1.0   }
+    UNCOMMON:
+      damage:      { min: 10,   max: 20    }
+      crit-chance: { min: 2.0,  max: 5.0   }
+      crit-damage: { min: 120.0,max: 150.0 }
+      atk-speed:   { min: 1.0,  max: 1.8   }
+      penetration: { min: 1.0,  max: 5.0   }
+      life-steal:  { min: 0.0,  max: 2.0   }
+    RARE:
+      damage:      { min: 20,   max: 40    }
+      crit-chance: { min: 4.0,  max: 10.0  }
+      crit-damage: { min: 130.0,max: 170.0 }
+      atk-speed:   { min: 1.2,  max: 2.0   }
+      penetration: { min: 3.0,  max: 10.0  }
+      life-steal:  { min: 1.0,  max: 4.0   }
+    EPIC:
+      damage:      { min: 40,   max: 80    }
+      crit-chance: { min: 8.0,  max: 18.0  }
+      crit-damage: { min: 150.0,max: 200.0 }
+      atk-speed:   { min: 1.5,  max: 2.5   }
+      penetration: { min: 7.0,  max: 18.0  }
+      life-steal:  { min: 2.0,  max: 7.0   }
+    UNIQUE:
+      damage:      { min: 70,   max: 130   }
+      crit-chance: { min: 14.0, max: 25.0  }
+      crit-damage: { min: 170.0,max: 230.0 }
+      atk-speed:   { min: 1.8,  max: 3.0   }
+      penetration: { min: 12.0, max: 25.0  }
+      life-steal:  { min: 4.0,  max: 10.0  }
+    LEGENDARY:
+      damage:      { min: 120,  max: 200   }
+      crit-chance: { min: 20.0, max: 35.0  }
+      crit-damage: { min: 200.0,max: 280.0 }
+      atk-speed:   { min: 2.2,  max: 3.5   }
+      penetration: { min: 18.0, max: 35.0  }
+      life-steal:  { min: 6.0,  max: 15.0  }
+  armor:
+    COMMON:
+      health:  { min: 10,  max: 30   }
+      defense: { min: 1.0, max: 5.0  }
+      evasion: { min: 0.0, max: 2.0  }
+    UNCOMMON:
+      health:  { min: 30,  max: 70   }
+      defense: { min: 4.0, max: 10.0 }
+      evasion: { min: 1.0, max: 4.0  }
+    RARE:
+      health:  { min: 60,  max: 130  }
+      defense: { min: 8.0, max: 18.0 }
+      evasion: { min: 2.0, max: 7.0  }
+    EPIC:
+      health:  { min: 120, max: 220  }
+      defense: { min: 15.0,max: 30.0 }
+      evasion: { min: 4.0, max: 12.0 }
+    UNIQUE:
+      health:  { min: 200, max: 350  }
+      defense: { min: 25.0,max: 45.0 }
+      evasion: { min: 7.0, max: 18.0 }
+    LEGENDARY:
+      health:  { min: 320, max: 500  }
+      defense: { min: 38.0,max: 65.0 }
+      evasion: { min: 12.0,max: 25.0 }
+
+# ════════════════════════════════════════════
+#  아이템 설정 (이름 / 로어 / 재질 / Custom Model Data)
+#  § 색코드 사용 가능.  custom-model-data: 0 = 미사용
+# ════════════════════════════════════════════
+items:
+  scroll:
+    name: "§6감정서"
+    lore:
+      - "§7각성/감정 GUI에서 사용하세요"
+      - "§8(/rpgcore awake)"
+    material: PAPER
+    custom-model-data: 0
+
+  awake-stone:
+    name: "§b각성석"
+    lore:
+      - "§7각성/감정 GUI에서 사용하세요"
+      - "§8(/rpgcore awake)"
+    material: AMETHYST_SHARD
+    custom-model-data: 0
+
+  upgrade-stone-low:
+    name: "§f✦ 하급 강화석"
+    lore:
+      - "§r"
+      - "  §7+1 ~ +3 강화에 사용합니다."
+      - "§r"
+    material: COBBLESTONE
+    custom-model-data: 0
+
+  upgrade-stone-mid:
+    name: "§b✦ 중급 강화석"
+    lore:
+      - "§r"
+      - "  §7+4 ~ +7 강화에 사용합니다."
+      - "§r"
+    material: LAPIS_LAZULI
+    custom-model-data: 0
+
+  upgrade-stone-high:
+    name: "§5✦ 상급 강화석"
+    lore:
+      - "§r"
+      - "  §7+8 ~ +10 강화에 사용합니다."
+      - "§r"
+    material: AMETHYST_SHARD
+    custom-model-data: 0
+
+  protect-break:
+    name: "§c✦ 파괴방지권"
+    lore:
+      - "§r"
+      - "  §7강화 실패 시 §c파괴§7를 막습니다."
+      - "  §7파괴 확률이 §f실패§7로 전환됩니다."
+      - "§r"
+    material: TOTEM_OF_UNDYING
+    custom-model-data: 0
+
+  protect-down:
+    name: "§e✦ 하락방지권"
+    lore:
+      - "§r"
+      - "  §7강화 실패 시 §e하락§7을 막습니다."
+      - "  §7하락 확률이 §f실패§7로 전환됩니다."
+      - "§r"
+    material: SHIELD
+    custom-model-data: 0
+
+  stat-reset-scroll:
+    name: "§6✦ §e스텟 초기화권 §6✦"
+    lore:
+      - "§r"
+      - "  §7우클릭하여 사용"
+      - "§r"
+      - "  §8✦ §f힘 §8/ §f체력 §8/ §f민첩 §7스텟을 초기화하고"
+      - "  §8  §7투자한 포인트를 전액 환급합니다."
+      - "§r"
+      - "  §c주의: §7사용 즉시 효과가 적용됩니다."
+    material: PAPER
+    custom-model-data: 0
+
+  level-reset-scroll:
+    name: "§5✦ §d레벨 초기화권 §5✦"
+    lore:
+      - "§r"
+      - "  §7우클릭하여 사용"
+      - "§r"
+      - "  §8✦ §f레벨 §8/ §fXP §8/ §f스텟§7을 모두 초기화합니다."
+      - "  §8  §7레벨은 §e[1]§7로, 스텟 포인트는 §e[1]레벨 기본값§7으로 돌아갑니다."
+      - "§r"
+      - "  §c주의: §7사용 즉시 효과가 적용됩니다."
+    material: PAPER
+    custom-model-data: 0
+
+  xp-boost-scroll:
+    name: "§6✦ 경험치 부스트권 {scope}"
+    lore:
+      - "§r"
+      - "  §7배수 §8: §e{mult}x"
+      - "  §7시간 §8: §b{min}분"
+      - "  §7범위 §8: {scope}"
+      - "§r"
+      - "  §f우클릭하여 사용"
+    material: PAPER
+    custom-model-data: 0
+    scope-personal: "§a[개인]"
+    scope-global: "§c[전체]"
+
+# ════════════════════════════════════════════
+#  로어 텍스트 (아이템 로어 내 표시 문구)
+# ════════════════════════════════════════════
+lore-text:
+  separator: "§8──────────────────"
+  grade-label: "◆ §f등급 §8: "
+  weapon-dmg-label: "  §c⚔ §f무기 데미지 §8: §c+"
+  no-socket: "  §7각성석으로 각성을 진행해주세요"
+  empty-slot: "  §8[ §7🔒 §8] §7빈 인챈트 슬롯"
+  appraisal-guide: "  §7▷ /rpgcore awake 으로 감정을 진행해주세요"
+  socket-remain: "  §8[ §7남은 재각성 횟수 §8: {count} §8]"
+  appraisal-remain: "  §8[ §7남은 재감정 횟수 §8: {count} §8]"
+  appraised: "  §8[§a감정된 아이템§8]"
+  inf-symbol: "§a∞"
+  stone-name-low: "§f하급 강화석"
+  stone-name-mid: "§b중급 강화석"
+  stone-name-high: "§5상급 강화석"
+
+  # 무기 스텟 라인 라벨 (값은 뒤에 자동으로 붙음)
+  weapon-stat:
+    damage: "§c공격력 §f>> §7"
+    crit-chance: "§e치명타 확률 §f>> §7"
+    crit-damage: "§e치명타 피해 §f>> §7"
+    atk-speed: "§a공격 속도 §f>> §7"
+    penetration: "§6방어 관통 §f>> §7"
+    life-steal: "§d생명력 흡수 §f>> §7"
+
+  # 방어구 스텟 라인 라벨
+  armor-stat:
+    health: "§b최대 체력 §f>> §7"
+    defense: "§3방어력 §f>> §7"
+    evasion: "§2회피율 §f>> §7"
+
+  # 감정 슬롯 스텟 라벨
+  appraisal-stat:
+    weapon-damage: "§c추가 데미지"
+    weapon-crit: "§e치명타 확률"
+    weapon-crit-dmg: "§e치명타 피해"
+    weapon-atk-speed: "§a공격 속도  "
+    weapon-pen: "§b관통       "
+    weapon-life-steal: "§c흡혈       "
+    armor-health: "§a추가 생명력"
+    armor-defense: "§b방어력     "
+    armor-evasion: "§e회피율     "
+
+# ════════════════════════════════════════════
+#  GUI 텍스트
+# ════════════════════════════════════════════
+gui:
+  awake:
+    title: "§8[ §6각성 §8/ §e감정 §8]"
+    slot-weapon: "§e무기 / 장비 슬롯"
+    slot-weapon-lore:
+      - "§7RPG 무기 또는 장비를 올려주세요"
+    slot-scroll: "§a스크롤 슬롯"
+    slot-scroll-lore:
+      - "§6감정서 §7또는 §b각성석§7을 올려주세요"
+    pending: "§711번과 13번 슬롯을 채워주세요"
+    action-ok: "§a클릭하여 진행"
+    no-money: "§c잔액 부족"
+    label-action: "§7동작: "
+    label-cost: "§7비용: §e{cost}원"
+    label-no-money: "§c잔액이 부족합니다!"
+    label-ok: "§a진행 가능"
+    label-appraise: "§6최초 감정"
+    label-reappraise: "§e재감정"
+    label-awake: "§a최초 각성"
+    label-reawake: "§b재각성"
+
+  upgrade:
+    title: "§8⚒ §6강화 §8⚒"
+    slot-item-name: "§a[ 강화할 아이템 ]"
+    slot-item-lore:
+      - "§7인벤에서 RPG 아이템을 클릭하세요."
+    slot-stone-name: "§e[ 강화석 ]"
+    slot-stone-lore:
+      - "§7인벤에서 강화석을 클릭하세요."
+      - "§r"
+      - "§f+1~+3 §8: §f하급 강화석"
+      - "§b+4~+7 §8: §b중급 강화석"
+      - "§5+8~+10 §8: §5상급 강화석"
+    slot-break-name: "§c[ 파괴방지권 ]"
+    slot-break-lore:
+      - "§7선택 — 파괴방지권을 클릭하세요."
+    slot-down-name: "§e[ 하락방지권 ]"
+    slot-down-lore:
+      - "§7선택 — 하락방지권을 클릭하세요."
+    slot-result-name: "§f[ 결과 ]"
+    slot-result-lore:
+      - "§7강화 후 결과 아이템이 여기에 나타납니다."
+      - "§7클릭하여 가져가세요."
+    btn-no-item: "§7강화하기"
+    btn-no-item-lore:
+      - "§7강화할 아이템을 올려주세요."
+    btn-not-rpg: "§c강화 불가"
+    btn-not-rpg-lore:
+      - "§7감정된 RPG 아이템만 강화할 수 있습니다."
+    btn-max: "§6★ 최대 강화"
+    btn-max-lore:
+      - "§7이미 +10 최대 강화 상태입니다."
+    btn-ready: "§6⚒ 강화하기  §8(+{cur} → +{tgt})"
+    btn-not-ready: "§c강화 불가"
+    btn-stone-ok: "  §a▶ 좌클릭하여 강화!"
+    btn-stone-err: "  §c✖ 강화석 종류가 맞지 않습니다"
+
+  roon:
+    title: "§8✦ §6루 장착 §8✦"
+    empty-slot-name: "§8[ 빈 슬롯 {number} ]"
+    empty-slot-lore:
+      - "§7보석을 클릭하여 장착하세요."
+
+# ════════════════════════════════════════════
+#  메시지 (§ 색코드 사용 가능)
+#  플레이스홀더: {player} {level} {xp} {cost} {grade} {slots}
+#               {remaining} {points} {count} {item} {mult}
+#               {min} {scope} {damage} {upgNote} {prev} {new}
+#               {required} {material} {slot}
+# ════════════════════════════════════════════
+messages:
+  # 공통 오류
+  err-player-only: "§c플레이어만 사용 가능합니다."
+  err-no-permission: "§c[!] §c권한이 없습니다."
+  err-player-not-found: "§c[!] §c플레이어 §e{player}§c를 찾을 수 없습니다."
+  err-console-no-player: "§c[!] §c콘솔에서는 플레이어 이름을 지정하세요."
+  err-console-unavail: "§c[!] §c콘솔에서는 사용할 수 없습니다."
+  err-need-item-in-hand: "§c손에 아이템을 들고 사용하세요."
+  err-need-weapon-in-hand: "§c[!] 손에 무기를 들고 사용하세요."
+
+  # 감정
+  err-not-rpg-item: "§cRPG 아이템이 아닙니다."
+  err-already-appraised: "§c이미 감정된 아이템입니다."
+  err-not-appraised: "§c감정되지 않은 아이템입니다. §7먼저 §f/감정 §7을 사용하세요."
+  err-not-enough-money-app: "§c감정 비용이 부족합니다. §8(필요: §e{cost}원§8)"
+  err-not-enough-money-reapp: "§c재감정 비용이 부족합니다. §8(필요: §e{cost}원§8)"
+  err-no-socket: "§c각성이 존재하지않습니다."
+  err-appraisal-max-reached: "§c감정 최대 리롤 횟수에 도달했습니다."
+  err-appraisal-fail: "§c감정 리롤 실패."
+  err-not-appraised-cmd-fail: "§c감정 실패. RPG 무기/방어구만 감정 가능합니다."
+  appraisal-success: "§6[ 감정 ] §f{grade} 감정 완료! §8(§e{slots}§8종 스텟 부여, 재감정 §7{remaining}§8)  §7-{cost}원"
+  reappraisal-success: "§6[ 재감정 ] §f{slots}종 스텟이 새로 결정되었습니다! §8(감정 §7{remaining}§8)  §7-{cost}원"
+
+  # 각성
+  err-already-awakened: "§c이미 각성된 아이템입니다."
+  err-not-awakened: "§c각성이 되지 않은 아이템입니다. 먼저 각성석을 사용하세요."
+  err-socket-max-reached: "§c재각성 횟수를 모두 사용했습니다."
+  err-not-enough-money-socket: "§c잔액이 부족합니다. §8(필요: §e{cost}원§8)"
+  socket-success: "§b[각성] §f각성 완료! §8(§e{slots}§8 슬롯) §7-{cost}원"
+  socket-reroll-success: "§b[재각성] §f{slots}슬롯으로 재각성! §7-{cost}원"
+
+  # 강화
+  err-need-item: "§c[!] 강화할 아이템을 올려주세요."
+  err-not-rpg-item-upgrade: "§c[!] RPG 아이템만 강화할 수 있습니다."
+  err-need-stone: "§c[!] 강화석을 올려주세요."
+  err-max-upgrade: "§c[!] 이미 최대 강화 상태입니다."
+  err-wrong-stone: "§c[!] 잘못된 강화석입니다. {required}§c이 필요합니다."
+  upgrade-success: "§6⚒ §a강화 성공! §f+{prev} §8→ §6+{new}"
+  upgrade-fail: "§7⚒ 강화 실패. §f강화 단계 유지. §8(+{prev})"
+  upgrade-down: "§e⚒ 강화 실패! §f강화 단계가 §e-1 하락§f했습니다. §8(+{prev} → +{new})"
+  upgrade-break: "§c⚒ 강화 실패! §f아이템이 §c파괴§f되었습니다."
+
+  # 보석
+  err-jewel-only: "§c보석에는 감정서만 사용 가능합니다."
+  err-jewel-already-app: "§c이미 감정된 보석입니다."
+  err-jewel-not-enough-money: "§c잔액이 부족합니다. §8(필요: §e{cost}원§8)"
+  jewel-appraisal-ok: "§6[보석 감정] §f감정 완료! §7-{cost}원"
+  err-jewel-appraisal-fail: "§c보석 감정 실패."
+
+  # 루
+  err-jewel-only-2: "§c[!] 보석만 장착할 수 있습니다."
+  err-not-appraised-jewel: "§c[!] 감정되지 않은 보석입니다. §e/감정§c 명령어를 먼저 사용하세요."
+  err-roon-full: "§c[!] 루 슬롯이 모두 가득 찼습니다. (9/9)"
+  roon-equip: "§6✦ §f보석을 루 슬롯 {slot}번에 장착했습니다."
+  roon-unequip: "§7✦ §f보석을 루 슬롯 {slot}번에서 해제했습니다."
+
+  # 초기화권
+  err-no-stat-to-reset: "§c초기화할 스텟이 없습니다!"
+  stat-reset-ok: "§6✦ §e스텟 초기화권§f을 사용했습니다!"
+  stat-reset-detail: "§7초기화된 포인트 §8: §a+{points} §7/ 잔여 §8: §b{remaining}점"
+  err-no-level-to-reset: "§c[!] §c초기화할 레벨 또는 스텟이 없습니다!"
+  level-reset-ok: "§5[!] §5✦ §d레벨 초기화권§f을 사용했습니다!"
+
+  # XP 부스트
+  err-global-boost-active: "§c[!] 이미 전체 경험치 부스트가 활성화 중입니다."
+  err-personal-boost-active: "§c[!] 이미 개인 경험치 부스트가 활성화 중입니다."
+  global-boost-activated: "§6[!] §e{player}§f이(가) §6전체 경험치 부스트 §e{mult}x §f(§b{min}분§f)를 활성화했습니다!"
+  personal-boost-activated: "§6[!] §f개인 경험치 부스트 §e{mult}x §f(§b{min}분§f)가 활성화되었습니다!"
+
+  # 관리자
+  admin-level-set: "§a[!] §a{player}의 레벨을 §e{level}§a으로 설정했습니다."
+  admin-level-set-player: "§a[!] §a관리자에 의해 레벨이 §e{level}§a으로 설정되었습니다."
+  admin-xp-set: "§a[!] §a{player}의 XP를 §e{xp}§a으로 설정했습니다."
+  admin-xp-give: "§a[!] §a{player}에게 §e{xp} XP§a를 지급했습니다."
+  admin-reload: "§a[!] §aCRRPGCore 설정을 다시 불러왔습니다."
+  admin-stat-reset: "§a[!] §a{player}의 스텟을 초기화했습니다. 잔여 포인트: §e{points}"
+  admin-stat-reset-player: "§a[!] §a관리자에 의해 스텟이 초기화되었습니다. 잔여 포인트: §e{points}"
+  admin-weapon-rank: "§a[!] §f손에 든 §e{material}§a을 §f{grade}§a으로 설정했습니다."
+  admin-weapon-rank-tip: "§7플레이어에게 §e/감정 §7명령어로 스텟을 부여받도록 안내하세요."
+  admin-weapon-damage: "§a[!] §f손에 든 무기의 기본 데미지를 §c{damage}§a으로 설정했습니다.{upgNote}"
+  admin-give-scroll: "§a[!] §a{player}에게 {item} §f{count}개§a를 지급했습니다."
+  receive-scroll: "§e[!] {item} §f{count}개§e를 받았습니다! §7(우클릭하여 사용)"
+  admin-give-stone: "§a[!] §a{player}에게 §f{grade} 강화석 {count}개§a를 지급했습니다."
+  receive-stone: "§e[!] §f{grade} 강화석 §f{count}개§e를 받았습니다!"
+  admin-give-jewel: "§a[!] {player}에게 {grade} 보석 {count}개§a를 지급했습니다."
+  receive-jewel: "§e[!] {grade} 보석 §f{count}개§e를 받았습니다! §7(/감정으로 감정하세요)"
+  stat-points: "§e[!] §f스텟 포인트 §a{points}P §f지급되었습니다"
+
+  # AwakeGui 결과
+  awake-appraisal-ok: "§6[감정] §f감정 완료! §7-{cost}원"
+  awake-reappraisal-ok: "§6[재감정] §f스텟이 새로 결정되었습니다! §7-{cost}원"
+  awake-socket-ok: "§b[각성] §f각성 완료! §8(§e{slots}§8 슬롯) §7-{cost}원"
+  awake-socket-reroll-ok: "§b[재각성] §f{slots}슬롯으로 재각성! §7-{cost}원"
+  awake-slot-hint-11: "§c11번 슬롯에 아이템을 올려주세요."
+  awake-slot-hint-13: "§c13번 슬롯에 감정서 또는 각성석을 올려주세요."
+  err-awake-wrong-scroll: "§c올바른 스크롤이 아닙니다. §7(§6감정서 §7또는 §b각성석§7)"
+  err-awake-not-rpg-item: "§cRPG 아이템이 아닙니다."
+  err-awake-appr-max: "§c재감정 횟수를 모두 사용했습니다."
+  err-awake-sock-max: "§c재각성 횟수를 모두 사용했습니다."

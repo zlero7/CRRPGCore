@@ -1,0 +1,28 @@
+name: CRRPGCore
+version: '1.1.0'
+main: io.zlero.cRRPGCore.CRRPGCorePlugin
+api-version: '1.20'
+softdepend: [CRGuild]
+depend: [CRFramework, Vault]
+
+commands:
+  rpgcore:
+    description: CRRPGCore 통합 명령어
+    usage: /rpgcore <level|stat|weapon|armor|upgrade|roon|jewelry|info|awake>
+    aliases: [rpc]
+  스텟:
+    description: 스텟 GUI 열기
+    usage: /스텟 [info|reset]
+    aliases: [stat, stats]
+  리롤설정:
+    description: 아이템의 최대 리롤 횟수를 설정합니다. (관리자 전용)
+    usage: /리롤설정 <각성|감정> <최대횟수|-1=무제한>
+    permission: crrpgcore.admin
+
+permissions:
+  crrpgcore.admin:
+    description: CRRPGCore 관리자 권한
+    default: op
+  crrpgcore.use:
+    description: 스텟 GUI 사용
+    default: true
