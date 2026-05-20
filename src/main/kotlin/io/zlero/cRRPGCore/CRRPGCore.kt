@@ -1,9 +1,9 @@
 package io.zlero.cRRPGCore
 
+import io.zlero.cRFramework.CRPlugin
 import net.milkbowl.vault.economy.Economy
-import org.bukkit.plugin.java.JavaPlugin
 
-class CRRPGCorePlugin : JavaPlugin() {
+class CRRPGCorePlugin : CRPlugin() {
 
     companion object {
         lateinit var plugin: CRRPGCorePlugin
@@ -25,7 +25,32 @@ class CRRPGCorePlugin : JavaPlugin() {
 
     var economy: Economy? = null
 
-    override fun onEnable() {
+    override fun components() = listOf(
+        MessageConfig::class,
+        PlayerDataManager::class,
+        LevelManager::class,
+        StatManager::class,
+        RpgItemManager::class,
+        UpgradeManager::class,
+        JewelManager::class,
+        ArmorHealthManager::class,
+        ActionBarManager::class,
+        AppraisalManager::class,
+        SocketManager::class,
+        XpBoostManager::class,
+        // Listeners (@Subscribe 자동 등록)
+        LevelListener::class,
+        StatListener::class,
+        RpgItemListener::class,
+        RpgDurabilityListener::class,
+        PlayerSessionListener::class,
+        // Commands
+        RpgCoreCommand::class,
+        StatCommand::class,
+        RerollSettingCommand::class,
+    )
+
+    override fun onCREnabled() {
         plugin = this
 
         saveDefaultConfig()
@@ -39,58 +64,54 @@ class CRRPGCorePlugin : JavaPlugin() {
             logger.info("[CRRPGCore] Vault Economy 연동 완료: ${economy!!.name}")
         }
 
-        msgCfg            = MessageConfig(this).also { it.load(cfg) }
-        playerDataManager = PlayerDataManager(this).also { it.load() }
-        levelManager      = LevelManager(this).also      { it.loadConfig(cfg) }
-        statManager       = StatManager(this).also       { it.loadConfig() }
-        rpgItemManager    = RpgItemManager(this).also    { it.loadConfig(cfg) }
-        upgradeManager    = UpgradeManager(this).also    { it.loadConfig(cfg) }
-        jewelManager      = JewelManager(this)
-        armorHealthManager= ArmorHealthManager(this)
-        actionBarManager  = ActionBarManager(this)
-        appraisalManager  = AppraisalManager(this).also { it.loadConfig(cfg) }
-        socketManager     = SocketManager(this).also    { it.loadConfig(cfg) }
-        xpBoostManager    = XpBoostManager()
+        msgCfg            = inject<MessageConfig>().also            { it.load(cfg) }
+        playerDataManager = inject<PlayerDataManager>().also        { it.load() }
+        levelManager      = inject<LevelManager>().also             { it.loadConfig(cfg) }
+        statManager       = inject<StatManager>().also              { it.loadConfig() }
+        rpgItemManager    = inject<RpgItemManager>().also           { it.loadConfig(cfg) }
+        upgradeManager    = inject<UpgradeManager>().also           { it.loadConfig(cfg) }
+        jewelManager      = inject<JewelManager>()
+        armorHealthManager= inject<ArmorHealthManager>()
+        actionBarManager  = inject<ActionBarManager>()
+        appraisalManager  = inject<AppraisalManager>().also         { it.loadConfig(cfg) }
+        socketManager     = inject<SocketManager>().also            { it.loadConfig(cfg) }
+        xpBoostManager    = inject<XpBoostManager>()
         XpBoostScroll.init(this)
 
+        // object 기반 리스너는 DI 불가 → 직접 등록 유지
         val pm = server.pluginManager
-        pm.registerEvents(LevelListener(this, levelManager), this)
-        pm.registerEvents(StatListener(this),           this)
-        pm.registerEvents(StatGui,                      this)
-        pm.registerEvents(RoonGui,                      this)
-        pm.registerEvents(UpgradeGui,                   this)
-        pm.registerEvents(armorHealthManager,           this)
-        pm.registerEvents(RpgItemListener(this),        this)
-        pm.registerEvents(RpgDurabilityListener(this),  this)
-        pm.registerEvents(LevelResetScroll,             this)
-        pm.registerEvents(StatResetScroll,              this)
-        pm.registerEvents(AwakeGui,                     this)
-        pm.registerEvents(PlayerSessionListener(this),  this)
-        pm.registerEvents(XpBoostScroll,                this)
+        pm.registerEvents(StatGui,          this)
+        pm.registerEvents(RoonGui,          this)
+        pm.registerEvents(UpgradeGui,       this)
+        pm.registerEvents(LevelResetScroll, this)
+        pm.registerEvents(StatResetScroll,  this)
+        pm.registerEvents(AwakeGui,         this)
+        pm.registerEvents(XpBoostScroll,    this)
 
+        // 커맨드 등록 (탭 완성 지원을 위해 수동 등록 유지)
         getCommand("rpgcore")?.let {
-            val cmd = RpgCoreCommand(this)
+            val cmd = inject<RpgCoreCommand>()
             it.setExecutor(cmd)
             it.tabCompleter = cmd
         }
         getCommand("스텟")?.let {
-            val cmd = StatCommand(this)
+            val cmd = inject<StatCommand>()
             it.setExecutor(cmd)
             it.tabCompleter = cmd
         }
-        getCommand("리롤설정")?.setExecutor(RerollSettingCommand(this))
+        getCommand("리롤설정")?.setExecutor(inject<RerollSettingCommand>())
 
         actionBarManager.start()
 
         // 만료된 XP 부스트 엔트리 주기적 정리 (5분마다)
-        server.scheduler.runTaskTimerAsynchronously(this, Runnable {
+        scheduler.runTimerAsync(6000L, 6000L) {
             xpBoostManager.pruneExpired()
-        }, 6000L, 6000L)
+        }
 
         logger.info("[CRRPGCore] v${description.version} 활성화 완료!")
     }
 
-    override fun onDisable() {
+    override fun onCRDisabled() {
         UpgradeGui.closeAll()
         actionBarManager.stop()
         server.onlinePlayers.forEach { player ->

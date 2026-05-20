@@ -1,8 +1,7 @@
 package io.zlero.cRRPGCore
 
-import org.bukkit.event.EventHandler
+import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.EventPriority
-import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerExpChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -12,9 +11,9 @@ import org.bukkit.event.player.PlayerRespawnEvent
 class LevelListener(
     private val plugin: CRRPGCorePlugin,
     private val levelManager: LevelManager
-) : Listener {
+) {
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @Subscribe(priority = EventPriority.LOWEST)
     fun onExpChange(event: PlayerExpChangeEvent) {
         val gained = event.amount
         if (gained <= 0) return
@@ -22,13 +21,13 @@ class LevelListener(
         levelManager.giveXp(event.player, gained)
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @Subscribe(priority = EventPriority.HIGHEST)
     fun onDeath(event: PlayerDeathEvent) {
         event.droppedExp = 0
         event.keepLevel  = true
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @Subscribe(priority = EventPriority.HIGHEST)
     fun onRespawn(event: PlayerRespawnEvent) {
         val player = event.player
         val data   = levelManager.getPlayerData(player)
@@ -39,7 +38,7 @@ class LevelListener(
         }
     }
 
-    @EventHandler
+    @Subscribe
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
@@ -61,7 +60,7 @@ class LevelListener(
         }, 1L)
     }
 
-    @EventHandler
+    @Subscribe
     fun onPlayerQuit(event: PlayerQuitEvent) {
         plugin.jewelManager.removeSlots(event.player)
         levelManager.removePlayerData(event.player)

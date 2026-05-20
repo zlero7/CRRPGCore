@@ -3,8 +3,7 @@ package io.zlero.cRRPGCore
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
-import org.bukkit.event.Listener
+import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerItemHeldEvent
@@ -17,7 +16,7 @@ import java.util.UUID
  * applyVitality()는 baseValue를 직접 수정하므로 여기선 ADD_NUMBER modifier 사용
  * 최종 HP = baseValue(vitality) + modifier(장비HP + 보석HP)
  */
-class ArmorHealthManager(private val plugin: CRRPGCorePlugin) : Listener {
+class ArmorHealthManager(private val plugin: CRRPGCorePlugin) {
 
     companion object {
         private val MODIFIER_UUID = UUID.fromString("b2c3d4e5-f6a7-8901-bcde-f01234567890")
@@ -50,7 +49,7 @@ class ArmorHealthManager(private val plugin: CRRPGCorePlugin) : Listener {
     }
 
     // 아머 슬롯 변경 감지 → 1틱 후 반영
-    @EventHandler
+    @Subscribe
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
 

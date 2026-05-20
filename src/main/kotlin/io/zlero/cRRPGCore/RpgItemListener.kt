@@ -1,9 +1,8 @@
 package io.zlero.cRRPGCore
 
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
+import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.EventPriority
-import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import kotlin.random.Random
 
@@ -16,10 +15,10 @@ import kotlin.random.Random
  *   ③ 치명타 적용
  *   ④ 힘 스텟 보너스는 StatListener(HIGHEST)에서 추가
  */
-class RpgItemListener(private val plugin: CRRPGCorePlugin) : Listener {
+class RpgItemListener(private val plugin: CRRPGCorePlugin) {
 
     // onAttack: HIGH → 데미지 설정 또는 취소
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @Subscribe(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onAttack(event: EntityDamageByEntityEvent) {
         val attacker = event.damager as? Player ?: return
         val weapon   = attacker.inventory.itemInMainHand
@@ -74,7 +73,7 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) : Listener {
     }
 
     // onDefend: HIGHEST → onAttack(HIGH) + StatListener(HIGHEST) 이후 방어 계산
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @Subscribe(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDefend(event: EntityDamageByEntityEvent) {
         val victim     = event.entity as? Player ?: return
         val armorStat  = plugin.rpgItemManager.getTotalArmorStat(victim)
