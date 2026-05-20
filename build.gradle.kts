@@ -12,6 +12,7 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -19,7 +20,7 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
     compileOnly(files("libs/CRGuild.jar"))
-    compileOnly(files("libs/CRFramework-1.0.0.jar"))
+    compileOnly("com.github.zlero7:CRFramework:v1.0.3")
     compileOnly(files("libs/Vault.jar"))
     implementation("com.zaxxer:HikariCP:5.1.0")
 }
@@ -51,7 +52,7 @@ tasks {
     }
 }
 
-val targetJavaVersion = 17
+val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
 }
