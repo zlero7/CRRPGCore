@@ -134,9 +134,8 @@ object StatGui : Listener {
             return
         }
 
-        // ★ 스텟 찍을 때마다 즉시 저장
+        // allocate() 내부에서 playerDataRepository.update()로 dirty 마킹됨
         statMgr.allocate(player, stat)
-        plugin.playerDataManager.savePlayerAsync(player.uniqueId, data)
         refresh(event.inventory, player, plugin)
     }
 
@@ -148,10 +147,9 @@ object StatGui : Listener {
 
         val player = event.player as? Player ?: return
         val plugin = CRRPGCorePlugin.plugin
-        val data   = plugin.levelManager.getPlayerData(player)
 
-        // ★ GUI 닫을 때 저장
-        plugin.playerDataManager.savePlayerAsync(player.uniqueId, data)
+        // dirty 데이터 즉시 flush (퇴장 시 자동 저장도 되지만 GUI 닫을 때 즉시 반영)
+        plugin.playerDataRepository.flush(player.uniqueId)
     }
 
     private fun item(mat: Material, name: String, lore: List<String> = emptyList()): ItemStack {

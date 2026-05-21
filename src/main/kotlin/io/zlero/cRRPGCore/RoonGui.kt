@@ -68,7 +68,7 @@ object RoonGui : Listener {
         if (clicked == inv && slot in ROON_SLOTS) {
             val slots = mgr.getSlots(player)
             val jewel = slots[slot] ?: return
-            slots[slot] = null
+            mgr.setSlot(player, slot, null)
             player.inventory.addItem(jewel)
             refresh(inv, player)
             player.playSound(player.location, org.bukkit.Sound.ENTITY_ITEM_PICKUP, 1f, 1f)

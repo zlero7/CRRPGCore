@@ -24,8 +24,9 @@ class StatManager(private val plugin: CRRPGCorePlugin) {
     }
 
     fun grantPoints(player: Player, amount: Int = pointsPerLevel) {
-        val data = plugin.levelManager.getPlayerData(player)
-        data.statPoints += amount
+        plugin.playerDataRepository.update(player.uniqueId) {
+            statPoints += amount
+        }
         player.sendMessage(plugin.msgCfg.format(plugin.msgCfg.msgStatPoints, "points" to amount.toString()))
     }
 
@@ -50,13 +51,17 @@ class StatManager(private val plugin: CRRPGCorePlugin) {
             return false
         }
 
-        data.statPoints -= amount
-        when (stat) {
-            StatType.STRENGTH -> data.strength += amount
-            StatType.VITALITY -> { data.vitality += amount; applyVitality(player, data) }
-            StatType.AGILITY  -> data.agility += amount
+        plugin.playerDataRepository.update(player.uniqueId) {
+            statPoints -= amount
+            when (stat) {
+                StatType.STRENGTH -> strength += amount
+                StatType.VITALITY -> vitality += amount
+                StatType.AGILITY  -> agility  += amount
+            }
         }
-        plugin.playerDataManager.savePlayerAsync(player.uniqueId, data)
+
+        if (stat == StatType.VITALITY) applyVitality(player)
+
         return true
     }
 

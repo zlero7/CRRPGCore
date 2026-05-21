@@ -6,7 +6,6 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
-import java.util.UUID
 
 class JewelManager(private val plugin: CRRPGCorePlugin) {
 
@@ -15,32 +14,27 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
     val keyJewelStats  = NamespacedKey(plugin, "jewel_stats")      // 스텟 직렬화 문자열
     val keyAppraised   = NamespacedKey(plugin, "jewel_appraised")  // 감정 여부
 
-    // ── 룬 슬롯 저장 (서버 메모리, 로그아웃 시 파일 저장) ──────────────
-    // key: UUID, value: 9슬롯 아이템 직렬화 목록 (null = 빈 슬롯)
-    private val roonSlots = HashMap<UUID, Array<ItemStack?>>()
+    // 룬 슬롯은 RoonSlotRepository가 캐시 및 저장 관리
 
     fun getSlots(player: Player): Array<ItemStack?> =
-        roonSlots.getOrPut(player.uniqueId) {
-            plugin.playerDataManager.loadRoonSlots(player.uniqueId)
-        }
+        plugin.roonSlotRepository.get(player.uniqueId)?.slots ?: arrayOfNulls(9)
 
     fun setSlot(player: Player, index: Int, item: ItemStack?) {
-        val slots = getSlots(player)
-        slots[index] = item
+        plugin.roonSlotRepository.update(player.uniqueId) {
+            slots[index] = item
+        }
     }
 
+    /** GUI 닫을 때 즉시 저장 (dirty 데이터를 DB에 flush) */
     fun saveSlots(player: Player) {
-        plugin.playerDataManager.saveRoonSlots(player.uniqueId, getSlots(player))
+        plugin.roonSlotRepository.flush(player.uniqueId)
     }
 
-    fun loadSlots(player: Player) {
-        roonSlots[player.uniqueId] = plugin.playerDataManager.loadRoonSlots(player.uniqueId)
-    }
+    /** 접속 시 자동 로드 (RoonSlotRepository.onJoin이 처리하므로 no-op) */
+    fun loadSlots(player: Player) = Unit
 
-    fun removeSlots(player: Player) {
-        saveSlots(player)
-        roonSlots.remove(player.uniqueId)
-    }
+    /** 퇴장 시 자동 저장 (RoonSlotRepository.onQuit이 처리하므로 no-op) */
+    fun removeSlots(player: Player) = Unit
 
     // ── 합산 스텟 ────────────────────────────────────────────────────────
     fun getTotalStats(player: Player): Map<JewelStatType, Double> {
@@ -63,13 +57,13 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         }
         val stack = ItemStack(mat, amount.coerceIn(1, 64))
         val meta: ItemMeta = stack.itemMeta
-        meta.setDisplayName("${grade.color}\u2726 ${grade.displayName} \ubcf4\uc11d")
+        meta.setDisplayName("${grade.color}✦ ${grade.displayName} 보석")
         meta.lore = listOf(
-            "\u00a7r",
-            "  \u00a77\uac10\uc815\ub418\uc9c0 \uc54a\uc740 \ubcf4\uc11d\uc785\ub2c8\ub2e4.",
-            "  \u00a7e/\uac10\uc815 \u00a77\uba85\ub839\uc5b4\ub85c \uc2a4\ud0ef\uc744 \ubd80\uc5ec\ubc1b\uc73c\uc138\uc694.",
-            "\u00a7r",
-            "  \u00a78[\ubbf8\uac10\uc815 \ubcf4\uc11d]"
+            "§r",
+            "  §7감정되지 않은 보석입니다.",
+            "  §e/감정 §7명령어로 스탯을 부여받으세요.",
+            "§r",
+            "  §8[미감정 보석]"
         )
         meta.persistentDataContainer.set(keyJewelGrade, PersistentDataType.STRING, grade.id)
         stack.itemMeta = meta
@@ -87,21 +81,19 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         val types     = JewelStat.ALL_TYPES.shuffled().take(lineCount)
         val stats     = types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
 
-
-        // 직렬화: "key:value|key:value"
         val serialized = stats.joinToString("|") { "${it.type.key}:${it.value}" }
         pdc.set(keyJewelStats,  PersistentDataType.STRING, serialized)
         pdc.set(keyAppraised,   PersistentDataType.BYTE, 1)
 
-        meta.setDisplayName("${grade.color}\u2726 ${grade.displayName} \ubcf4\uc11d")
+        meta.setDisplayName("${grade.color}✦ ${grade.displayName} 보석")
         val lore = mutableListOf(
-            "\u00a78\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-            "  ${grade.color}* \u00a7f\ub4f1\uae09 \u00a78: ${grade.color}${grade.displayName}",
-            "\u00a78\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+            "§8──────────────────",
+            "  ${grade.color}* §f등급 §8: ${grade.color}${grade.displayName}",
+            "§8──────────────────"
         )
         stats.forEach { lore.add(it.toLoreLine()) }
-        lore.add("\u00a78\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
-        lore.add("  \u00a78[\uac10\uc815\ub41c \ubcf4\uc11d]")
+        lore.add("§8──────────────────")
+        lore.add("  §8[감정된 보석]")
         meta.lore = lore
         item.itemMeta = meta
         return true

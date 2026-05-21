@@ -1,6 +1,7 @@
 package io.zlero.cRRPGCore
 
 import io.zlero.cRFramework.CRPlugin
+import io.zlero.cRFramework.database.DatabaseModule
 import net.milkbowl.vault.economy.Economy
 
 class CRRPGCorePlugin : CRPlugin() {
@@ -10,24 +11,29 @@ class CRRPGCorePlugin : CRPlugin() {
             private set
     }
 
-    lateinit var msgCfg:             MessageConfig
-    lateinit var levelManager:       LevelManager
-    lateinit var statManager:        StatManager
-    lateinit var playerDataManager:  PlayerDataManager
-    lateinit var rpgItemManager:     RpgItemManager
-    lateinit var upgradeManager:     UpgradeManager
-    lateinit var jewelManager:       JewelManager
-    lateinit var armorHealthManager: ArmorHealthManager
-    lateinit var actionBarManager:   ActionBarManager
-    lateinit var appraisalManager:   AppraisalManager
-    lateinit var socketManager:      SocketManager
-    lateinit var xpBoostManager:     XpBoostManager
+    lateinit var msgCfg:              MessageConfig
+    lateinit var levelManager:        LevelManager
+    lateinit var statManager:         StatManager
+    lateinit var playerDataRepository: PlayerDataRepository
+    lateinit var roonSlotRepository:  RoonSlotRepository
+    lateinit var rpgItemManager:      RpgItemManager
+    lateinit var upgradeManager:      UpgradeManager
+    lateinit var jewelManager:        JewelManager
+    lateinit var armorHealthManager:  ArmorHealthManager
+    lateinit var actionBarManager:    ActionBarManager
+    lateinit var appraisalManager:    AppraisalManager
+    lateinit var socketManager:       SocketManager
+    lateinit var xpBoostManager:      XpBoostManager
 
     var economy: Economy? = null
 
     override fun components() = listOf(
+        // CRFramework DB 모듈 (SQLite 기본, @Teardown에서 자동 저장 + 연결 종료)
+        DatabaseModule::class,
+        PlayerDataRepository::class,
+        RoonSlotRepository::class,
+        // 매니저
         MessageConfig::class,
-        PlayerDataManager::class,
         LevelManager::class,
         StatManager::class,
         RpgItemManager::class,
@@ -43,7 +49,6 @@ class CRRPGCorePlugin : CRPlugin() {
         StatListener::class,
         RpgItemListener::class,
         RpgDurabilityListener::class,
-        PlayerSessionListener::class,
         // Commands
         RpgCoreCommand::class,
         StatCommand::class,
@@ -56,6 +61,7 @@ class CRRPGCorePlugin : CRPlugin() {
         saveDefaultConfig()
         val cfg = config
 
+        // Vault Economy 연동
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
         if (rsp == null) {
             logger.warning("[CRRPGCore] Vault Economy를 찾을 수 없습니다. 비용 기능이 비활성화됩니다.")
@@ -64,8 +70,16 @@ class CRRPGCorePlugin : CRPlugin() {
             logger.info("[CRRPGCore] Vault Economy 연동 완료: ${economy!!.name}")
         }
 
+        // DB 테이블 & PlayerRepository 등록
+        // @Setup(DB 연결)은 scan() 단계에서 완료됨 → addTable/addPlayerRepository로 테이블 생성 + 생명주기 리스너 등록
+        val db = inject<DatabaseModule>()
+        db.addTable(PlayerDataTable, RoonSlotTable)
+        playerDataRepository = inject<PlayerDataRepository>()
+        roonSlotRepository   = inject<RoonSlotRepository>()
+        db.addPlayerRepository(playerDataRepository, roonSlotRepository)
+
+        // 매니저 초기화
         msgCfg            = inject<MessageConfig>().also            { it.load(cfg) }
-        playerDataManager = inject<PlayerDataManager>().also        { it.load() }
         levelManager      = inject<LevelManager>().also             { it.loadConfig(cfg) }
         statManager       = inject<StatManager>().also              { it.loadConfig() }
         rpgItemManager    = inject<RpgItemManager>().also           { it.loadConfig(cfg) }
@@ -114,12 +128,8 @@ class CRRPGCorePlugin : CRPlugin() {
     override fun onCRDisabled() {
         UpgradeGui.closeAll()
         actionBarManager.stop()
-        server.onlinePlayers.forEach { player ->
-            val data = levelManager.getPlayerData(player)
-            playerDataManager.savePlayer(player.uniqueId, data)
-            jewelManager.saveSlots(player)
-        }
-        playerDataManager.close()
+        // PlayerRepository dirty 데이터 자동 저장 + DB 연결 종료는
+        // DatabaseModule.@Teardown → registry.teardown() 에서 처리
         logger.info("[CRRPGCore] 비활성화.")
     }
 

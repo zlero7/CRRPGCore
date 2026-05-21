@@ -187,13 +187,17 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
                 if (!sender.hasPermission("crrpgcore.admin")) { sender.sendMessage(mc.errNoPermission); return }
                 if (args.size < 2) { sender.sendMessage("§c[!] §c사용법: /rpgcore stat reset <player>"); return }
                 val target = Bukkit.getPlayer(args[1]) ?: run { sender.sendMessage(mc.format(mc.errPlayerNotFound, "player" to args[1])); return }
-                val data   = plugin.levelManager.getPlayerData(target)
-                data.statPoints += data.strength + data.vitality + data.agility
-                data.strength = 0; data.vitality = 0; data.agility = 0
-                plugin.statManager.applyVitality(target, data)
-                plugin.playerDataManager.savePlayer(target.uniqueId, data)
-                sender.sendMessage(mc.format(mc.msgAdminStatReset, "player" to target.name, "points" to data.statPoints.toString()))
-                target.sendMessage(mc.format(mc.msgAdminStatResetPlayer, "points" to data.statPoints.toString()))
+                val data     = plugin.levelManager.getPlayerData(target)
+                val totalPts = data.strength + data.vitality + data.agility
+                plugin.playerDataRepository.update(target.uniqueId) {
+                    statPoints += totalPts
+                    strength = 0; vitality = 0; agility = 0
+                }
+                plugin.statManager.applyVitality(target)
+                plugin.playerDataRepository.flush(target.uniqueId)
+                val newData = plugin.levelManager.getPlayerData(target)
+                sender.sendMessage(mc.format(mc.msgAdminStatReset, "player" to target.name, "points" to newData.statPoints.toString()))
+                target.sendMessage(mc.format(mc.msgAdminStatResetPlayer, "points" to newData.statPoints.toString()))
             }
 
             "초기화권" -> {

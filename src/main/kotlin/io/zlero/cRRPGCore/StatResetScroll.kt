@@ -54,12 +54,14 @@ object StatResetScroll : Listener {
             return
         }
 
-        data.statPoints += totalPoints
-        data.strength    = 0
-        data.vitality    = 0
-        data.agility     = 0
-        plugin.statManager.applyVitality(player, data)
-        plugin.playerDataManager.savePlayer(player.uniqueId, data)
+        plugin.playerDataRepository.update(player.uniqueId) {
+            statPoints += totalPoints
+            strength    = 0
+            vitality    = 0
+            agility     = 0
+        }
+        plugin.statManager.applyVitality(player)
+        plugin.playerDataRepository.flush(player.uniqueId)
 
         if (item.amount > 1) item.amount -= 1
         else player.inventory.setItemInMainHand(null)

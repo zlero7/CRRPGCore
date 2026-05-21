@@ -10,8 +10,6 @@ import java.util.UUID
 
 class LevelManager(private val plugin: CRRPGCorePlugin) {
 
-    internal val playerDataMap = HashMap<UUID, PlayerData>()
-
     var maxLevel: Int    = 100
         private set
     var baseXp: Int      = 100
@@ -54,25 +52,22 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
         return (baseXp * Math.pow(multiplier, level.toDouble())).toLong().coerceAtLeast(1L)
     }
 
-    // ─── 플레이어 데이터 접근 ─────────────────────────────────────────────
+    // ─── 플레이어 데이터 접근 (PlayerRepository 캐시 사용) ───────────────
     fun getPlayerData(player: Player): PlayerData =
-        playerDataMap.getOrPut(player.uniqueId) {
-            plugin.playerDataManager.loadPlayer(player.uniqueId)
-        }
+        plugin.playerDataRepository.get(player.uniqueId) ?: PlayerData()
 
     fun savePlayerData(player: Player, level: Int, xp: Long) {
-        val data = getPlayerData(player)
-        data.level = level
-        data.xp    = xp
-        updateExpBar(player, data)
-        plugin.playerDataManager.savePlayerAsync(player.uniqueId, data)
+        plugin.playerDataRepository.update(player.uniqueId) {
+            this.level = level
+            this.xp    = xp
+        }
+        updateExpBar(player, getPlayerData(player))
     }
 
     fun removePlayerData(player: Player) {
-        playerDataMap[player.uniqueId]?.let {
-            plugin.playerDataManager.savePlayer(player.uniqueId, it)
-        }
-        playerDataMap.remove(player.uniqueId)
+        // PlayerRepository.onQuit() 에서 자동 저장 처리
+        // 명시적 flush가 필요한 경우 호출
+        plugin.playerDataRepository.flush(player.uniqueId)
     }
 
     // ─── 경험치 지급 ──────────────────────────────────────────────────────
@@ -148,7 +143,7 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
         )
     }
 
-    private fun String.translateColorCodes(): String = this.replace("§", "\u00A7")
+    private fun String.translateColorCodes(): String = this.replace("§", "§")
 
     // ─── EXP 바 업데이트 ─────────────────────────────────────────────────
     private fun updateExpBar(player: Player, data: PlayerData) {

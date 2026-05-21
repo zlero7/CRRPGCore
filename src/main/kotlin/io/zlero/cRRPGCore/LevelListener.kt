@@ -5,7 +5,6 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerExpChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 
 class LevelListener(
@@ -38,20 +37,25 @@ class LevelListener(
         }
     }
 
-    @Subscribe
+    /**
+     * HIGH 우선순위 — DatabaseModule이 NORMAL 우선순위로 등록한
+     * PlayerLifecycleListener.onJoin이 먼저 실행되어 데이터를 캐시에 올린 뒤 호출됨
+     */
+    @Subscribe(priority = EventPriority.HIGH)
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
-        val isNewPlayer = !plugin.playerDataManager.hasPlayer(player.uniqueId)
-        val data = levelManager.getPlayerData(player)
-
+        // 신규 플레이어 감지 (createDefault()가 호출된 경우)
+        val isNewPlayer = plugin.playerDataRepository.consumeIsNew(player.uniqueId)
         if (isNewPlayer) {
-            data.statPoints += plugin.statManager.pointsPerLevel
-            plugin.playerDataManager.savePlayer(player.uniqueId, data)
+            plugin.playerDataRepository.update(player.uniqueId) {
+                statPoints += plugin.statManager.pointsPerLevel
+            }
             player.sendMessage(plugin.msgCfg.format(plugin.msgCfg.msgStatPoints,
                 "points" to plugin.statManager.pointsPerLevel.toString()))
         }
 
+        val data = levelManager.getPlayerData(player)
         levelManager.savePlayerData(player, data.level, data.xp)
         plugin.statManager.applyVitality(player, data)
 
@@ -60,10 +64,5 @@ class LevelListener(
         }, 1L)
     }
 
-    @Subscribe
-    fun onPlayerQuit(event: PlayerQuitEvent) {
-        plugin.jewelManager.removeSlots(event.player)
-        levelManager.removePlayerData(event.player)
-    }
-
+    // onPlayerQuit 제거 — PlayerRepository.onQuit()이 자동으로 저장 처리
 }
