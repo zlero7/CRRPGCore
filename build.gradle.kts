@@ -19,7 +19,7 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
-    compileOnly(files("libs/CRGuild.jar"))
+    compileOnly("com.github.zlero7:CRGuild:v1.0.2")
     compileOnly("com.github.zlero7:CRFramework:v1.0.3")
     compileOnly(files("libs/Vault.jar"))
     // HikariCP: CRFramework jar에 shaded 내장돼 있으므로 compileOnly (런타임 중복 방지)
