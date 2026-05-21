@@ -92,4 +92,24 @@ class RoonSlotRepository(private val plugin: JavaPlugin)
         plugin.logger.warning("[CRRPGCore] 룬 슬롯 역직렬화 실패: ${e.message}")
         null
     }
+
+    /** YAML 마이그레이션용 — Base64 문자열을 ItemStack으로 디코드 */
+    fun decodeItem(base64: String): ItemStack? = itemFromBase64(base64)
+
+    /**
+     * YAML 마이그레이션 전용 — DB에 직접 삽입 (이미 존재하면 스킵)
+     * @return true = 삽입됨, false = 이미 존재하여 스킵
+     */
+    fun migrateInsert(uuid: UUID, data: RoonSlotData): Boolean = query {
+        val exists = RoonSlotTable
+            .select { RoonSlotTable.uuid eq uuid.toString() }
+            .count() > 0
+        if (exists) return@query false
+
+        RoonSlotTable.insert {
+            it[RoonSlotTable.uuid]  = uuid.toString()
+            it[RoonSlotTable.slots] = serializeSlots(data.slots)
+        }
+        true
+    }
 }

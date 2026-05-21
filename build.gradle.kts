@@ -22,7 +22,10 @@ dependencies {
     compileOnly(files("libs/CRGuild.jar"))
     compileOnly("com.github.zlero7:CRFramework:v1.0.3")
     compileOnly(files("libs/Vault.jar"))
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    // HikariCP: CRFramework jar에 shaded 내장돼 있으므로 compileOnly (런타임 중복 방지)
+    compileOnly("com.zaxxer:HikariCP:5.1.0")
+    // MySQL JDBC 드라이버: storage.type=mysql 시 런타임 클래스패스 필요
+    implementation("com.mysql:mysql-connector-j:8.3.0")
 }
 
 tasks {

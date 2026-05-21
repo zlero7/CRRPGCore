@@ -1,7 +1,6 @@
 package io.zlero.cRRPGCore
 
 import io.zlero.cRFramework.CRPlugin
-import io.zlero.cRFramework.database.DatabaseModule
 import net.milkbowl.vault.economy.Economy
 
 class CRRPGCorePlugin : CRPlugin() {
@@ -24,12 +23,19 @@ class CRRPGCorePlugin : CRPlugin() {
     lateinit var appraisalManager:    AppraisalManager
     lateinit var socketManager:       SocketManager
     lateinit var xpBoostManager:      XpBoostManager
+    lateinit var migrationManager:    MigrationManager
 
     var economy: Economy? = null
 
+    // config.yml 을 onLoad() 에서 미리 생성해 DI scan 시점에 plugin.config 접근 가능하게 함
+    override fun onLoad() {
+        super.onLoad()
+        saveDefaultConfig()
+    }
+
     override fun components() = listOf(
-        // CRFramework DB 모듈 (SQLite 기본, @Teardown에서 자동 저장 + 연결 종료)
-        DatabaseModule::class,
+        // CRFramework DB 모듈 — config.yml storage.type 에 따라 SQLite / MySQL 자동 선택
+        CRRPGDatabaseModule::class,
         PlayerDataRepository::class,
         RoonSlotRepository::class,
         // 매니저
@@ -70,13 +76,13 @@ class CRRPGCorePlugin : CRPlugin() {
             logger.info("[CRRPGCore] Vault Economy 연동 완료: ${economy!!.name}")
         }
 
-        // DB 테이블 & PlayerRepository 등록
-        // @Setup(DB 연결)은 scan() 단계에서 완료됨 → addTable/addPlayerRepository로 테이블 생성 + 생명주기 리스너 등록
-        val db = inject<DatabaseModule>()
-        db.addTable(PlayerDataTable, RoonSlotTable)
+        // DB 연결 + 테이블 생성은 CRRPGDatabaseModule.@Setup 에서 이미 완료
+        // PlayerStorageListener 수동 등록 → PlayerRepository onJoin/onQuit 트리거
         playerDataRepository = inject<PlayerDataRepository>()
         roonSlotRepository   = inject<RoonSlotRepository>()
-        db.addPlayerRepository(playerDataRepository, roonSlotRepository)
+        server.pluginManager.registerEvents(
+            PlayerStorageListener(playerDataRepository, roonSlotRepository), this
+        )
 
         // 매니저 초기화
         msgCfg            = inject<MessageConfig>().also            { it.load(cfg) }
@@ -90,6 +96,7 @@ class CRRPGCorePlugin : CRPlugin() {
         appraisalManager  = inject<AppraisalManager>().also         { it.loadConfig(cfg) }
         socketManager     = inject<SocketManager>().also            { it.loadConfig(cfg) }
         xpBoostManager    = inject<XpBoostManager>()
+        migrationManager  = MigrationManager(this)
         XpBoostScroll.init(this)
 
         // object 기반 리스너 직접 등록
@@ -129,7 +136,7 @@ class CRRPGCorePlugin : CRPlugin() {
         UpgradeGui.closeAll()
         actionBarManager.stop()
         // PlayerRepository dirty 데이터 자동 저장 + DB 연결 종료는
-        // DatabaseModule.@Teardown → registry.teardown() 에서 처리
+        // CRRPGDatabaseModule.@Teardown → registry.teardown() 에서 처리
         logger.info("[CRRPGCore] 비활성화.")
     }
 

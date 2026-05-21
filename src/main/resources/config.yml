@@ -4,8 +4,10 @@
 
 # ─── 데이터 저장소 설정 ───────────────────────
 storage:
-  # 저장 방식: yaml 또는 mysql
-  type: yaml
+  # 저장 방식: sqlite (기본) 또는 mysql
+  # yaml 타입은 더 이상 지원되지 않습니다 (sqlite 로 대체)
+  # 구 버전 YAML 데이터 이전: /rpgcore migrate
+  type: sqlite
 
   mysql:
     host:     localhost

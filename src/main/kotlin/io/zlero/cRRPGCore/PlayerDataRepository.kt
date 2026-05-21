@@ -71,4 +71,26 @@ class PlayerDataRepository : PlayerRepository<PlayerData, PlayerDataTable>(Playe
      * LevelListener.onPlayerJoin(HIGH priority)에서 호출
      */
     fun consumeIsNew(uuid: UUID): Boolean = newPlayers.remove(uuid)
+
+    /**
+     * YAML 마이그레이션 전용 — DB에 직접 삽입 (이미 존재하면 스킵)
+     * @return true = 삽입됨, false = 이미 존재하여 스킵
+     */
+    fun migrateInsert(uuid: UUID, data: PlayerData): Boolean = query {
+        val exists = PlayerDataTable
+            .select { PlayerDataTable.uuid eq uuid.toString() }
+            .count() > 0
+        if (exists) return@query false
+
+        PlayerDataTable.insert {
+            it[PlayerDataTable.uuid]       = uuid.toString()
+            it[PlayerDataTable.level]      = data.level
+            it[PlayerDataTable.xp]         = data.xp
+            it[PlayerDataTable.statPoints] = data.statPoints
+            it[PlayerDataTable.strength]   = data.strength
+            it[PlayerDataTable.vitality]   = data.vitality
+            it[PlayerDataTable.agility]    = data.agility
+        }
+        true
+    }
 }

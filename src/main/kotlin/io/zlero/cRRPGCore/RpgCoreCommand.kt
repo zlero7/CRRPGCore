@@ -28,9 +28,31 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
             "info"    -> handleInfo(sender, args.drop(1))
             "awake"   -> handleAwake(sender, args.drop(1))
             "reload"  -> handleReload(sender)
+            "migrate" -> handleMigrate(sender)
             else      -> sendHelp(sender)
         }
         return true
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  migrate  (YAML → 현재 DB)
+    // ─────────────────────────────────────────────────────────────────
+    private fun handleMigrate(sender: CommandSender) {
+        if (!sender.hasPermission("crrpgcore.admin")) {
+            sender.sendMessage(plugin.msgCfg.errNoPermission); return
+        }
+        sender.sendMessage("§e[CRRPGCore] §fPlayerData.yml → DB 마이그레이션을 시작합니다...")
+        // 비동기로 실행 (DB I/O 부하를 메인 스레드에서 분리)
+        plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+            val result = plugin.migrationManager.migrateFromYaml()
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                sender.sendMessage("§a[CRRPGCore] §f마이그레이션 완료!")
+                sender.sendMessage("  §7플레이어 §8: §a${result.playerMigrated}명 이전 §8/ §e${result.playerSkipped}명 스킵")
+                sender.sendMessage("  §7룬 슬롯  §8: §a${result.roonMigrated}명 이전")
+                if (result.hasErrors)
+                    sender.sendMessage("  §c오류 §8: §c${result.errors}건 §7(서버 콘솔 로그 확인)")
+            })
+        })
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -501,6 +523,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
         sender.sendMessage("§e/rpgcore jewelry §8<등급> [갯수] [플레이어]  §7보석 지급 §7§o(OP)")
         sender.sendMessage("§e/rpgcore awake                 §7각성/감정 GUI 열기")
         sender.sendMessage("§e/rpgcore reload                §7설정 리로드 §7§o(OP)")
+        sender.sendMessage("§e/rpgcore migrate               §7YAML → DB 데이터 이전 §7§o(OP)")
         sender.sendMessage("§8────────────────────────────────")
     }
 
@@ -542,7 +565,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
     ): List<String> {
         val online = Bukkit.getOnlinePlayers().map { it.name }
         return when (args.size) {
-            1 -> listOf("level","stat","weapon","armor","upgrade","roon","jewelry","info","awake","reload")
+            1 -> listOf("level","stat","weapon","armor","upgrade","roon","jewelry","info","awake","reload","migrate")
                 .filter { it.startsWith(args[0], ignoreCase = true) }
             2 -> when (args[0].lowercase()) {
                 "level"   -> listOf("info","setlevel","setxp","givexp","reload","초기화권","xpboost").filter { it.startsWith(args[1], ignoreCase = true) }
