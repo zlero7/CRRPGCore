@@ -59,6 +59,7 @@ class CRRPGCorePlugin : CRPlugin() {
         RpgCoreCommand::class,
         StatCommand::class,
         RerollSettingCommand::class,
+        RoonCommand::class,
         // GUI 하단 인벤토리 클릭 라우터
         GUIBottomClickListener::class,
     )
@@ -120,6 +121,7 @@ class CRRPGCorePlugin : CRPlugin() {
             it.tabCompleter = cmd
         }
         getCommand("리롤설정")?.setExecutor(inject<RerollSettingCommand>())
+        getCommand("룬")?.setExecutor(inject<RoonCommand>())
 
         actionBarManager.start()
 

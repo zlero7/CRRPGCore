@@ -32,6 +32,7 @@ class UpgradeView(private val rpg: CRRPGCorePlugin)
         const val SLOT_BREAK_PRO = 20
         const val SLOT_DOWN_PRO  = 21
         const val SLOT_RESULT    = 15
+        const val SLOT_RETRY     = 24   // 결과 슬롯(15) 아래 — 재강화 버튼
         val UPGRADE_BTN_SLOTS    = setOf(25, 26, 34, 35)
 
         private val openViews = ConcurrentHashMap<UUID, UpgradeView>()
@@ -129,6 +130,32 @@ class UpgradeView(private val rpg: CRRPGCorePlugin)
                 resultItem = null
                 player.inventory.addItem(res)
                 player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1f, 1f)
+                rerender()
+            }
+        }
+
+        // 재강화 버튼 (slot 24 — 결과 슬롯 아래)
+        // 결과 아이템이 있고 추가 강화 가능할 때만 활성화
+        button(slot = SLOT_RETRY) {
+            item { _ ->
+                val res = resultItem
+                when {
+                    res == null ->
+                        makeItem(Material.GRAY_STAINED_GLASS_PANE, "§8✖ §7재강화 §8(결과 아이템 없음)")
+                    rpg.upgradeManager.getLevel(res) >= 10 ->
+                        makeItem(Material.NETHER_STAR, "§6★ §e최대 강화 달성!")
+                    else ->
+                        makeItem(Material.ANVIL, "§a▶ §f재강화",
+                            listOf("§r", "  §7결과 아이템을 강화 슬롯으로 이동", "  §e클릭하여 바로 재시도"))
+                }
+            }
+            onClick { player ->
+                val res = resultItem ?: return@onClick
+                if (rpg.upgradeManager.getLevel(res) >= 10) return@onClick
+                // 기존 아이템 슬롯 아이템이 있으면 반환
+                itemSlot?.let { player.inventory.addItem(it) }
+                itemSlot   = res
+                resultItem = null
                 rerender()
             }
         }
@@ -253,6 +280,10 @@ class UpgradeView(private val rpg: CRRPGCorePlugin)
                 itemSlot = null; resultItem = null
                 player.sendMessage(mc.msgUpgradeBreak)
                 player.playSound(player.location, Sound.BLOCK_ANVIL_BREAK, 1f, 0.8f)
+                // 파괴 후 2초 뒤 GUI 자동 닫기 (빈 슬롯을 잠깐 보여준 뒤 닫힘)
+                org.bukkit.Bukkit.getScheduler().runTaskLater(rpg, Runnable {
+                    if (openViews.containsKey(player.uniqueId)) player.closeInventory()
+                }, 40L)
             }
             UpgradeManager.UpgradeOutcome.FAIL_DOWN -> {
                 resultItem = item.clone(); itemSlot = null
