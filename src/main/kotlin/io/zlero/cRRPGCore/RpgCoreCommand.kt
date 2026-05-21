@@ -164,7 +164,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
         val mc = plugin.msgCfg
         if (args.isEmpty()) {
             val player = sender as? Player ?: run { sender.sendMessage(mc.errConsoleNoPlayer); return }
-            StatGui.open(player, plugin)
+            StatView(plugin).open(player)
             return
         }
 

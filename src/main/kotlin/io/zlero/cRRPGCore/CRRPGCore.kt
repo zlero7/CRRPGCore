@@ -92,9 +92,9 @@ class CRRPGCorePlugin : CRPlugin() {
         xpBoostManager    = inject<XpBoostManager>()
         XpBoostScroll.init(this)
 
-        // object 기반 리스너는 DI 불가 → 직접 등록 유지
+        // object 기반 리스너 직접 등록
+        // StatGui → StatView(CRFramework View) 로 대체되어 pm.registerEvents 불필요
         val pm = server.pluginManager
-        pm.registerEvents(StatGui,          this)
         pm.registerEvents(RoonGui,          this)
         pm.registerEvents(UpgradeGui,       this)
         pm.registerEvents(LevelResetScroll, this)

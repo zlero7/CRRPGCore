@@ -17,7 +17,7 @@ class StatCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, TabCom
 
         // 인수 없으면 GUI 오픈
         if (args.isEmpty()) {
-            StatGui.open(player, plugin)
+            StatView(plugin).open(player)
             return true
         }
 
@@ -34,12 +34,15 @@ class StatCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, TabCom
                     sender.sendMessage("§c[!] §c권한이 없습니다."); return true
                 }
                 val data = plugin.levelManager.getPlayerData(player)
-                data.statPoints += data.strength + data.vitality + data.agility
-                data.strength = 0; data.vitality = 0; data.agility = 0
-                plugin.statManager.applyVitality(player, data)
-                player.sendMessage("§a[!] §a스텟이 초기화되었습니다. 잔여 포인트: §e${data.statPoints}")
+                val total = data.strength + data.vitality + data.agility
+                plugin.playerDataRepository.update(player.uniqueId) {
+                    statPoints += total
+                    strength = 0; vitality = 0; agility = 0
+                }
+                plugin.statManager.applyVitality(player)
+                player.sendMessage("§a[!] §a스텟이 초기화되었습니다. 잔여 포인트: §e${data.statPoints + total}")
             }
-            else -> StatGui.open(player, plugin)
+            else -> StatView(plugin).open(player)
         }
         return true
     }
