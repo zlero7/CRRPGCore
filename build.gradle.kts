@@ -19,9 +19,9 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
-    compileOnly("com.github.zlero7:CRGuild:v1.0.2")
+    compileOnly("com.github.zlero7:CRGuild:1.0.2")
     compileOnly("com.github.zlero7:CRFramework:v1.0.3")
-    compileOnly(files("libs/Vault.jar"))
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     // HikariCP: CRFramework jar에 shaded 내장돼 있으므로 compileOnly (런타임 중복 방지)
     compileOnly("com.zaxxer:HikariCP:5.1.0")
     // MySQL JDBC 드라이버: storage.type=mysql 시 런타임 클래스패스 필요
