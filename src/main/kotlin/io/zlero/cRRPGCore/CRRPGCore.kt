@@ -59,6 +59,8 @@ class CRRPGCorePlugin : CRPlugin() {
         RpgCoreCommand::class,
         StatCommand::class,
         RerollSettingCommand::class,
+        // GUI 하단 인벤토리 클릭 라우터
+        GUIBottomClickListener::class,
     )
 
     override fun onCREnabled() {
@@ -100,13 +102,10 @@ class CRRPGCorePlugin : CRPlugin() {
         XpBoostScroll.init(this)
 
         // object 기반 리스너 직접 등록
-        // StatGui → StatView(CRFramework View) 로 대체되어 pm.registerEvents 불필요
+        // RoonGui / UpgradeGui / AwakeGui → View + GUIBottomClickListener 로 대체
         val pm = server.pluginManager
-        pm.registerEvents(RoonGui,          this)
-        pm.registerEvents(UpgradeGui,       this)
         pm.registerEvents(LevelResetScroll, this)
         pm.registerEvents(StatResetScroll,  this)
-        pm.registerEvents(AwakeGui,         this)
         pm.registerEvents(XpBoostScroll,    this)
 
         // 커맨드 등록 (탭 완성 지원을 위해 수동 등록 유지)
@@ -133,7 +132,7 @@ class CRRPGCorePlugin : CRPlugin() {
     }
 
     override fun onCRDisabled() {
-        UpgradeGui.closeAll()
+        UpgradeView.closeAll()
         actionBarManager.stop()
         // PlayerRepository dirty 데이터 자동 저장 + DB 연결 종료는
         // CRRPGDatabaseModule.@Teardown → registry.teardown() 에서 처리

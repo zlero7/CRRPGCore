@@ -313,7 +313,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
         val mc     = plugin.msgCfg
         val player = sender as? Player ?: run { sender.sendMessage(mc.errConsoleUnavail); return }
 
-        if (args.isEmpty()) { UpgradeGui.open(player); return }
+        if (args.isEmpty()) { UpgradeView.openFor(plugin, player); return }
 
         if (!sender.hasPermission("crrpgcore.admin")) { sender.sendMessage(mc.errNoPermission); return }
 
@@ -441,7 +441,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
     // ─────────────────────────────────────────────────────────────────
     private fun handleRoon(sender: CommandSender, args: List<String>) {
         val player = sender as? Player ?: run { sender.sendMessage(plugin.msgCfg.errConsoleUnavail); return }
-        RoonGui.open(player)
+        RoonView.openFor(plugin, player)
     }
 
     private fun handleJewelry(sender: CommandSender, args: List<String>) {
@@ -474,7 +474,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
         val mc = plugin.msgCfg
         if (args.isEmpty()) {
             val player = sender as? Player ?: run { sender.sendMessage(mc.errConsoleUnavail); return }
-            AwakeGui.open(player)
+            AwakeView.openFor(plugin, player)
             return
         }
 
@@ -493,7 +493,7 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
             sender as? Player ?: run { sender.sendMessage(mc.errConsoleNoPlayer); return }
         }
 
-        val scrollItem = AwakeGui.makeScrollItem(type) ?: run { sender.sendMessage("§c[!] 알 수 없는 타입: $type"); return }
+        val scrollItem = AwakeView.makeScrollItem(plugin, type) ?: run { sender.sendMessage("§c[!] 알 수 없는 타입: $type"); return }
         scrollItem.amount = amount
         target.inventory.addItem(scrollItem).values.forEach { leftover ->
             target.world.dropItem(target.location, leftover)
