@@ -50,7 +50,7 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
         val totalCritDm = wStat.critDamage + jewelCritDm
         val isCrit = Random.nextDouble() * 100.0 < totalCritCh
         if (isCrit) {
-            damage *= (totalCritDm / 100.0)
+            damage *= (1.0 + totalCritDm / 100.0)
             attacker.sendMessage(plugin.msgCfg.msgCombatCrit)
         }
 

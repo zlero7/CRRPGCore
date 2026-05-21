@@ -78,8 +78,8 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
         if (data.level >= maxLevel) return
 
         // 부스트 배수 적용
-        val multiplier  = plugin.xpBoostManager.getTotalMultiplier(player.uniqueId)
-        val boostedXp   = (xpAmount * multiplier).toLong().coerceAtLeast(xpAmount)
+        val boostMultiplier = plugin.xpBoostManager.getTotalMultiplier(player.uniqueId)
+        val boostedXp       = (xpAmount * boostMultiplier).toLong().coerceAtLeast(xpAmount)
 
         var currentXp    = data.xp + boostedXp
         var currentLevel = data.level
@@ -112,7 +112,7 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
 
         if (showXpOnGain && !leveledUp) {
             val required = getRequiredXpForLevel(currentLevel)
-            val boostTag = if (multiplier > 1.0) " §6(§e${multiplier}x 부스트§6)" else ""
+            val boostTag = if (boostMultiplier > 1.0) " §6(§e${boostMultiplier}x 부스트§6)" else ""
             player.sendMessage(
                 msgXpGained
                     .replace("{xp}",       boostedXp.toString())

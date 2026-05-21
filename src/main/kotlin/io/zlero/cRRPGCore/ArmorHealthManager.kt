@@ -6,7 +6,6 @@ import org.bukkit.entity.Player
 import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
-import org.bukkit.event.player.PlayerItemHeldEvent
 import java.util.UUID
 
 /**

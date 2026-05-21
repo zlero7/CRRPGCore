@@ -43,8 +43,7 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
         }
 
         val xpDisplay  = if (level >= plugin.levelManager.maxLevel) "§6MAX" else "§b$xp §7/ §b$maxXp"
-        val guildName  = if (crGuildEnabled) CRGuildAPI.getGuildName(player) ?: "none" else "none"
-        val guildColor = if (guildName == "none") "§7" else "§a"
+        val guildName  = if (crGuildEnabled) CRGuildAPI.getGuildName(player) else null
 
         // 부스트 세그먼트
         val boostSegment = plugin.xpBoostManager.getActionBarSegment(player.uniqueId)
@@ -53,7 +52,7 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
                 "  §e[ Lv.$level ]" +
                 "  §7[ $xpDisplay §7]" +
                 (if (boostSegment != null) "  $boostSegment" else "") +
-                "  ${guildColor}[ $guildName ]"
+                (if (guildName != null) "  §a[ $guildName ]" else "")
 
         player.sendActionBar(Component.text(text))
     }

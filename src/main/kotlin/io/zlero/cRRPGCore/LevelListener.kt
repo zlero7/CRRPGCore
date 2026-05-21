@@ -31,7 +31,7 @@ class LevelListener(
         val player = event.player
         val data   = levelManager.getPlayerData(player)
         org.bukkit.Bukkit.getScheduler().runTask(plugin) { _ ->
-            levelManager.savePlayerData(player, data.level, data.xp)
+            // 리스폰 시 데이터 변경 없이 속성만 재적용 (불필요한 DB 쓰기 제거)
             plugin.statManager.applyVitality(player, data)
             plugin.armorHealthManager.applyArmorHealth(player)
         }
