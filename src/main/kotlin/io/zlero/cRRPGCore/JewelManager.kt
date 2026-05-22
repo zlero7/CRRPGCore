@@ -6,8 +6,12 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class JewelManager(private val plugin: CRRPGCorePlugin) {
+
+    private val statsCache = ConcurrentHashMap<UUID, Map<JewelStatType, Double>>()
 
     // ── NBT 키 ──────────────────────────────────────────────────────────
     val keyJewelGrade  = NamespacedKey(plugin, "jewel_grade")      // 보석 등급 id
@@ -23,27 +27,39 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         plugin.roonSlotRepository.update(player.uniqueId) {
             slots[index] = item
         }
+        statsCache.remove(player.uniqueId)
     }
 
     /** GUI 닫을 때 즉시 저장 (dirty 데이터를 DB에 flush) */
     fun saveSlots(player: Player) {
         plugin.roonSlotRepository.flush(player.uniqueId)
+        statsCache.remove(player.uniqueId)
     }
 
     /** 접속 시 자동 로드 (RoonSlotRepository.onJoin이 처리하므로 no-op) */
     fun loadSlots(player: Player) = Unit
 
     /** 퇴장 시 자동 저장 (RoonSlotRepository.onQuit이 처리하므로 no-op) */
-    fun removeSlots(player: Player) = Unit
+    fun removeSlots(player: Player) {
+        statsCache.remove(player.uniqueId)
+    }
+
+    /** 외부에서 캐시 무효화가 필요할 때 호출 */
+    fun invalidateStatsCache(uuid: UUID) {
+        statsCache.remove(uuid)
+    }
 
     // ── 합산 스텟 ────────────────────────────────────────────────────────
     fun getTotalStats(player: Player): Map<JewelStatType, Double> {
+        val uuid = player.uniqueId
+        statsCache[uuid]?.let { return it }
         val total = mutableMapOf<JewelStatType, Double>()
         getSlots(player).filterNotNull().forEach { jewel ->
             parseStats(jewel).forEach { stat ->
                 total[stat.type] = (total[stat.type] ?: 0.0) + stat.value
             }
         }
+        statsCache[uuid] = total
         return total
     }
 

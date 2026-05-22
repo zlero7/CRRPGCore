@@ -22,6 +22,7 @@ dependencies {
     compileOnly("com.github.zlero7:CRGuild:1.0.2")
     compileOnly("com.github.zlero7:CRFramework:v1.0.3")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
+    compileOnly("com.github.PlaceholderAPI:PlaceholderAPI:2.11.6")
     // HikariCP: CRFramework jar에 shaded 내장돼 있으므로 compileOnly (런타임 중복 방지)
     compileOnly("com.zaxxer:HikariCP:5.1.0")
     // MySQL JDBC 드라이버: storage.type=mysql 시 런타임 클래스패스 필요

@@ -31,9 +31,10 @@ class GUIBottomClickListener(private val rpg: CRRPGCorePlugin) {
         val item = event.currentItem?.takeIf { it.type != Material.AIR } ?: return
 
         when {
-            RoonView.isOpen(uuid)    -> handleRoon(event, player, item)
-            UpgradeView.isOpen(uuid) -> handleUpgrade(event, player, item)
-            AwakeView.isOpen(uuid)   -> handleAwake(event, player, item)
+            RoonView.isOpen(uuid)         -> handleRoon(event, player, item)
+            UpgradeView.isOpen(uuid)      -> handleUpgrade(event, player, item)
+            AwakeView.isOpen(uuid)        -> handleAwake(event, player, item)
+            JewelCombineView.isOpen(uuid) -> handleJewelCombine(event, player, item)
         }
     }
 
@@ -55,9 +56,14 @@ class GUIBottomClickListener(private val rpg: CRRPGCorePlugin) {
             return
         }
 
-        val slots    = mgr.getSlots(player)
-        val emptyIdx = slots.indexOfFirst { it == null }
-        if (emptyIdx < 0) {
+        val view  = RoonView.getView(player.uniqueId)
+        val slots = mgr.getSlots(player)
+
+        // 지정 슬롯이 있으면 우선 사용, 없으면 첫 빈 슬롯
+        val target = view?.targetSlot?.takeIf { slots[it] == null }
+            ?: slots.indexOfFirst { it == null }
+
+        if (target < 0) {
             event.isCancelled = true
             player.sendMessage(mc.errRoonFull)
             return
@@ -66,13 +72,16 @@ class GUIBottomClickListener(private val rpg: CRRPGCorePlugin) {
         event.isCancelled = true
 
         val toPlace = item.clone().also { it.amount = 1 }
-        mgr.setSlot(player, emptyIdx, toPlace)
+        mgr.setSlot(player, target, toPlace)
         if (item.amount > 1) item.amount -= 1 else event.currentItem = null
 
-        player.playSound(player.location, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1.2f)
-        player.sendMessage(mc.format(mc.msgRoonEquip, "slot" to (emptyIdx + 1).toString()))
+        // 지정 슬롯 선택 해제
+        if (view != null) view.targetSlot = null
 
-        RoonView.getView(player.uniqueId)?.rerender()
+        player.playSound(player.location, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1.2f)
+        player.sendMessage(mc.format(mc.msgRoonEquip, "slot" to (target + 1).toString()))
+
+        view?.rerender()
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -111,6 +120,30 @@ class GUIBottomClickListener(private val rpg: CRRPGCorePlugin) {
             else    -> view.itemSlot     = toPlace
         }
 
+        if (item.amount > 1) item.amount -= 1 else event.currentItem = null
+        view.rerender()
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  JewelCombineView: 보석 → 재료 슬롯에 배치
+    // ─────────────────────────────────────────────────────────────────
+    private fun handleJewelCombine(event: InventoryClickEvent, player: Player, item: ItemStack) {
+        val view = JewelCombineView.getView(player.uniqueId) ?: return
+        val jm   = rpg.jewelManager
+        if (!jm.isJewel(item)) {
+            event.isCancelled = true
+            player.sendMessage(rpg.msgCfg.errJewelOnly2)
+            return
+        }
+        val emptyIdx = view.materialSlots.indexOfFirst { it == null }
+        if (emptyIdx < 0) {
+            event.isCancelled = true
+            player.sendMessage("§c[!] 재료 슬롯이 가득 찼습니다.")
+            return
+        }
+        event.isCancelled = true
+        val toPlace = item.clone().also { it.amount = 1 }
+        view.materialSlots[emptyIdx] = toPlace
         if (item.amount > 1) item.amount -= 1 else event.currentItem = null
         view.rerender()
     }

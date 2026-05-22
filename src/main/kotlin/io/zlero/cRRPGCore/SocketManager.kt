@@ -12,6 +12,7 @@ class SocketManager(private val plugin: CRRPGCorePlugin) {
     val keySocketCount     = NamespacedKey(plugin, "rpg_socket_count")
     val keySocketRerollCnt = NamespacedKey(plugin, "rpg_socket_reroll_cnt")
     val keySocketMaxReroll = NamespacedKey(plugin, "rpg_socket_max_reroll")
+    val keyStatLines       = NamespacedKey(plugin, "rpg_stat_lines")
 
     var socketCost: Int       = 10_000
     var socketRerollCost: Int = 10_000
@@ -148,8 +149,18 @@ class SocketManager(private val plugin: CRRPGCorePlugin) {
         stats: List<AppraisalManager.StatLine>,
         socketRemain: Int,
         appraisalRemain: Int? = null,
-        weaponDamage: Int? = null
+        weaponDamage: Int? = null,
+        item: ItemStack? = null
     ) {
+        // PDC에 스탯 라인 직렬화 저장 (item이 제공된 경우)
+        if (item != null && stats.isNotEmpty()) {
+            val meta = item.itemMeta
+            if (meta != null) {
+                val serialized = stats.joinToString("::") { "${it.label}||${it.value}" }
+                meta.persistentDataContainer.set(keyStatLines, PersistentDataType.STRING, serialized)
+                item.itemMeta = meta
+            }
+        }
         val mc  = plugin.msgCfg
         val sep = mc.loreSeparator
 

@@ -6,8 +6,12 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class RpgItemManager(private val plugin: CRRPGCorePlugin) {
+
+    private val armorStatCache = ConcurrentHashMap<UUID, ArmorStat>()
 
     val keyGrade       = NamespacedKey(plugin, "rpg_grade")
     val keyItemType    = NamespacedKey(plugin, "rpg_item_type")
@@ -21,6 +25,7 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
     val keyDefense     = NamespacedKey(plugin, "rpg_defense")
     val keyEvasion     = NamespacedKey(plugin, "rpg_evasion")
     val keyWeaponDamage = NamespacedKey(plugin, "rpg_weapon_damage")
+    val keyBound        = NamespacedKey(plugin, "rpg_bound")
 
     data class WeaponRange(
         val dmgMin: Int,       val dmgMax: Int,
@@ -241,6 +246,8 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
     }
 
     fun getTotalArmorStat(player: org.bukkit.entity.Player): ArmorStat {
+        val uuid = player.uniqueId
+        armorStatCache[uuid]?.let { return it }
         var totalHealth  = 0
         var totalDefense = 0.0
         var totalEvasion = 0.0
@@ -251,7 +258,35 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
             totalDefense += stat.defense
             totalEvasion += stat.evasion
         }
-        return ArmorStat(health = totalHealth, defense = totalDefense, evasion = totalEvasion)
+        val result = ArmorStat(health = totalHealth, defense = totalDefense, evasion = totalEvasion)
+        armorStatCache[uuid] = result
+        return result
+    }
+
+    fun invalidateArmorCache(uuid: UUID) {
+        armorStatCache.remove(uuid)
+    }
+
+    // ── 귀속 시스템 ───────────────────────────────────────────────────────
+    fun isBound(item: ItemStack?): Boolean =
+        item?.itemMeta?.persistentDataContainer?.has(keyBound, PersistentDataType.STRING) ?: false
+
+    fun getBoundOwner(item: ItemStack?): UUID? {
+        val raw = item?.itemMeta?.persistentDataContainer?.get(keyBound, PersistentDataType.STRING) ?: return null
+        return runCatching { UUID.fromString(raw) }.getOrNull()
+    }
+
+    /** 아이템 귀속 (한 번 귀속되면 해제 불가) */
+    fun bindItem(item: ItemStack, owner: UUID, ownerName: String) {
+        val meta = item.itemMeta ?: return
+        val pdc  = meta.persistentDataContainer
+        if (pdc.has(keyBound, PersistentDataType.STRING)) return  // 이미 귀속됨
+        pdc.set(keyBound, PersistentDataType.STRING, owner.toString())
+        val lore = (meta.lore ?: mutableListOf()).toMutableList()
+        lore.add("§r")
+        lore.add("  §c※ §7귀속된 아이템 §8(§f$ownerName§8)")
+        meta.lore = lore
+        item.itemMeta = meta
     }
 
     fun getWeaponBaseDamage(item: ItemStack): Int {
@@ -278,7 +313,7 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
         val socketRemain    = sm.getRemainingRerolls(item)
         val appraisalRemain = if (pdc.has(am.keyAppraisalMaxReroll, PersistentDataType.INTEGER))
             am.getRemainingRerolls(item) else null
-        val currentStats    = plugin.upgradeManager.parseLoreStats(item.itemMeta?.lore ?: emptyList())
+        val currentStats    = plugin.upgradeManager.parseLoreStats(item)
 
         val meta2 = item.itemMeta ?: return true
         val lore  = (meta2.lore ?: mutableListOf()).toMutableList()

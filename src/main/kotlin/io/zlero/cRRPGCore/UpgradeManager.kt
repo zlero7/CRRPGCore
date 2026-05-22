@@ -73,9 +73,10 @@ class UpgradeManager(private val plugin: CRRPGCorePlugin) {
     enum class UpgradeOutcome { SUCCESS, FAIL_KEEP, FAIL_DOWN, FAIL_BREAK }
 
     data class UpgradeResult(
-        val outcome:   UpgradeOutcome,
-        val prevLevel: Int,
-        val newLevel:  Int
+        val outcome:    UpgradeOutcome,
+        val prevLevel:  Int,
+        val newLevel:   Int,
+        val resultItem: ItemStack?  // FAIL_BREAK = null, 그 외 = 강화 결과 아이템
     )
 
     fun tryUpgrade(item: ItemStack, hasBreakPro: Boolean, hasDownPro: Boolean): UpgradeResult? {
@@ -121,7 +122,8 @@ class UpgradeManager(private val plugin: CRRPGCorePlugin) {
             applyLevel(item, meta, pdc, newLevel)
         }
 
-        return UpgradeResult(outcome, currentLevel, newLevel)
+        val resultItem = if (outcome != UpgradeOutcome.FAIL_BREAK) item.clone() else null
+        return UpgradeResult(outcome, currentLevel, newLevel, resultItem)
     }
 
     private fun applyLevel(
@@ -147,54 +149,55 @@ class UpgradeManager(private val plugin: CRRPGCorePlugin) {
         if (itemType == RpgItemType.WEAPON) {
             val baseWpnDmg = pdc.get(plugin.rpgItemManager.keyWeaponDamage, PersistentDataType.INTEGER)
             val displayWpnDmg = if (baseWpnDmg != null) baseWpnDmg + bonus else null
-
-            val appraised       = am.isAppraised(item)
-            val socketRemain    = sm.getRemainingRerolls(item)
-            val appraisalRemain = if (pdc.has(am.keyAppraisalMaxReroll, PersistentDataType.INTEGER))
-                am.getRemainingRerolls(item) else null
-
-            val currentStats = parseLoreStats(item.itemMeta?.lore ?: emptyList())
-
-            val meta2 = item.itemMeta ?: return
-            val lore  = (meta2.lore ?: mutableListOf()).toMutableList()
-            sm.rebuildOurBlock(
-                lore            = lore,
-                grade           = grade,
-                socketCount     = sm.getSocketCount(item),
-                appraised       = appraised,
-                stats           = currentStats,
-                socketRemain    = socketRemain,
-                appraisalRemain = appraisalRemain,
-                weaponDamage    = displayWpnDmg
-            )
-            meta2.lore = lore
-            item.itemMeta = meta2
-
+            rebuildItemBlock(item, grade, displayWpnDmg)
         } else if (itemType == RpgItemType.ARMOR) {
-            val appraised       = am.isAppraised(item)
-            val socketRemain    = sm.getRemainingRerolls(item)
-            val appraisalRemain = if (pdc.has(am.keyAppraisalMaxReroll, PersistentDataType.INTEGER))
-                am.getRemainingRerolls(item) else null
-            val currentStats    = parseLoreStats(item.itemMeta?.lore ?: emptyList())
-
-            val meta2 = item.itemMeta ?: return
-            val lore  = (meta2.lore ?: mutableListOf()).toMutableList()
-            sm.rebuildOurBlock(
-                lore            = lore,
-                grade           = grade,
-                socketCount     = sm.getSocketCount(item),
-                appraised       = appraised,
-                stats           = currentStats,
-                socketRemain    = socketRemain,
-                appraisalRemain = appraisalRemain,
-                weaponDamage    = null
-            )
-            meta2.lore = lore
-            item.itemMeta = meta2
+            rebuildItemBlock(item, grade, null)
         }
     }
 
-    internal fun parseLoreStats(lore: List<String>): List<AppraisalManager.StatLine> {
+    private fun rebuildItemBlock(item: ItemStack, grade: ItemGrade, weaponDamage: Int?) {
+        val sm = plugin.socketManager
+        val am = plugin.appraisalManager
+        val pdc = item.itemMeta?.persistentDataContainer ?: return
+
+        val appraised       = am.isAppraised(item)
+        val socketRemain    = sm.getRemainingRerolls(item)
+        val appraisalRemain = if (pdc.has(am.keyAppraisalMaxReroll, PersistentDataType.INTEGER))
+            am.getRemainingRerolls(item) else null
+        val currentStats    = parseLoreStats(item)
+
+        val meta2 = item.itemMeta ?: return
+        val lore  = (meta2.lore ?: mutableListOf()).toMutableList()
+        sm.rebuildOurBlock(
+            lore            = lore,
+            grade           = grade,
+            socketCount     = sm.getSocketCount(item),
+            appraised       = appraised,
+            stats           = currentStats,
+            socketRemain    = socketRemain,
+            appraisalRemain = appraisalRemain,
+            weaponDamage    = weaponDamage,
+            item            = item
+        )
+        meta2.lore = lore
+        item.itemMeta = meta2
+    }
+
+    internal fun parseLoreStats(item: ItemStack): List<AppraisalManager.StatLine> {
+        val raw = item.itemMeta?.persistentDataContainer
+            ?.get(plugin.socketManager.keyStatLines, PersistentDataType.STRING)
+        if (!raw.isNullOrBlank()) {
+            return raw.split("::").mapNotNull {
+                val parts = it.split("||")
+                if (parts.size != 2) null
+                else AppraisalManager.StatLine(parts[0], parts[1])
+            }
+        }
+        // fallback: lore 파싱 (구 아이템 호환)
+        return parseLoreStatsFromLore(item.itemMeta?.lore ?: emptyList())
+    }
+
+    private fun parseLoreStatsFromLore(lore: List<String>): List<AppraisalManager.StatLine> {
         val result = mutableListOf<AppraisalManager.StatLine>()
         for (line in lore) {
             if (!line.contains("§7>> §f")) continue

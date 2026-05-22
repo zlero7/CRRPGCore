@@ -302,6 +302,15 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
                 }
             }
 
+            "bind" -> {
+                val item = player.inventory.itemInMainHand
+                if (item.type.isAir) { sender.sendMessage(mc.errNeedItemInHand); return }
+                if (!plugin.rpgItemManager.isRpgItem(item)) { sender.sendMessage("§c[!] RPG 아이템이 아닙니다."); return }
+                if (plugin.rpgItemManager.isBound(item)) { sender.sendMessage("§e[!] 이미 귀속된 아이템입니다."); return }
+                plugin.rpgItemManager.bindItem(item, player.uniqueId, player.name)
+                sender.sendMessage("§a[!] §f아이템이 §c${player.name}§f에게 귀속되었습니다.")
+            }
+
             else -> sendItemHelp(sender, isWeapon)
         }
     }
@@ -352,12 +361,32 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
                 if (target != player) target.sendMessage(mc.format(mc.msgReceiveStone,
                     "grade" to gradeName, "count" to amount.toString()))
             }
+            "history" -> {
+                val list = plugin.upgradeHistoryManager.getHistory(player.uniqueId)
+                if (list.isEmpty()) { player.sendMessage("§7강화 기록이 없습니다."); return }
+                player.sendMessage("§8─── §b내 강화 기록 (최근 ${list.size}건) §8─────")
+                list.forEachIndexed { i, e ->
+                    val outcomeStr = when (e.outcome) {
+                        UpgradeManager.UpgradeOutcome.SUCCESS    -> "§a성공"
+                        UpgradeManager.UpgradeOutcome.FAIL_KEEP  -> "§7실패"
+                        UpgradeManager.UpgradeOutcome.FAIL_DOWN  -> "§e하락"
+                        UpgradeManager.UpgradeOutcome.FAIL_BREAK -> "§c파괴"
+                    }
+                    val levelStr = when (e.outcome) {
+                        UpgradeManager.UpgradeOutcome.FAIL_BREAK -> "+${e.prevLevel} → §c파괴"
+                        else -> "+${e.prevLevel} → +${e.newLevel}"
+                    }
+                    player.sendMessage("  §8[${i+1}] §7${e.time}  ${e.itemName}  $outcomeStr §8($levelStr§8)")
+                }
+                player.sendMessage("§8────────────────────────────────")
+            }
             else -> {
                 sender.sendMessage("§7사용법:")
                 sender.sendMessage("§e/rpgcore upgrade §7- 강화 GUI 오픈")
                 sender.sendMessage("§e/rpgcore upgrade 파괴방어 §8[갯수] [플레이어]")
                 sender.sendMessage("§e/rpgcore upgrade 하락방어 §8[갯수] [플레이어]")
                 sender.sendMessage("§e/rpgcore upgrade 강화석 §8<low/mid/high> [갯수] [플레이어]")
+                sender.sendMessage("§e/rpgcore upgrade history §7- 나의 강화 기록")
             }
         }
     }
@@ -446,8 +475,16 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
 
     private fun handleJewelry(sender: CommandSender, args: List<String>) {
         val mc = plugin.msgCfg
+        if (args.isEmpty()) { sender.sendMessage("§c사용법: /rpgcore jewelry <low/mid/high/supreme|combine> [갯수] [플레이어]"); return }
+
+        // combine 서브커맨드 (권한 불필요)
+        if (args[0].lowercase() == "combine") {
+            val player = sender as? Player ?: run { sender.sendMessage(mc.errConsoleUnavail); return }
+            JewelCombineView.openFor(plugin, player)
+            return
+        }
+
         if (!sender.hasPermission("crrpgcore.admin")) { sender.sendMessage(mc.errNoPermission); return }
-        if (args.isEmpty()) { sender.sendMessage("§c사용법: /rpgcore jewelry <low/mid/high/supreme> [갯수] [플레이어]"); return }
 
         val grade = JewelGrade.fromId(args[0].lowercase()) ?: run {
             sender.sendMessage("§c[!] 등급: low / mid / high / supreme"); return
@@ -570,10 +607,10 @@ class RpgCoreCommand(private val plugin: CRRPGCorePlugin) : CommandExecutor, Tab
             2 -> when (args[0].lowercase()) {
                 "level"   -> listOf("info","setlevel","setxp","givexp","reload","초기화권","xpboost").filter { it.startsWith(args[1], ignoreCase = true) }
                 "stat"    -> listOf("info","reset","초기화권").filter { it.startsWith(args[1], ignoreCase = true) }
-                "weapon"  -> listOf("rank","damage").filter { it.startsWith(args[1], ignoreCase = true) }
-                "armor"   -> listOf("rank").filter { it.startsWith(args[1], ignoreCase = true) }
-                "upgrade" -> listOf("파괴방어","하락방어","강화석").filter { it.startsWith(args[1], ignoreCase = true) }
-                "jewelry" -> listOf("low","mid","high","supreme").filter { it.startsWith(args[1], ignoreCase = true) }
+                "weapon"  -> listOf("rank","damage","bind").filter { it.startsWith(args[1], ignoreCase = true) }
+                "armor"   -> listOf("rank","bind").filter { it.startsWith(args[1], ignoreCase = true) }
+                "upgrade" -> listOf("파괴방어","하락방어","강화석","history").filter { it.startsWith(args[1], ignoreCase = true) }
+                "jewelry" -> listOf("low","mid","high","supreme","combine").filter { it.startsWith(args[1], ignoreCase = true) }
                 "awake"   -> listOf("scroll","stone").filter { it.startsWith(args[1], ignoreCase = true) }
                 else      -> emptyList()
             }

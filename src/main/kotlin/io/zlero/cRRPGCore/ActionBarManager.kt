@@ -18,7 +18,15 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
 
     fun start() {
         task = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
-            Bukkit.getOnlinePlayers().forEach { updateActionBar(it) }
+            val snapshot = Bukkit.getOnlinePlayers().toList()
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+                val lines = snapshot.mapNotNull { p ->
+                    if (!p.isOnline) null else p to buildActionBarText(p)
+                }
+                Bukkit.getScheduler().runTask(plugin, Runnable {
+                    lines.forEach { (p, text) -> p.sendActionBar(Component.text(text)) }
+                })
+            })
         }, 0L, 20L) // 1초(20틱) 마다 갱신
     }
 
@@ -27,7 +35,7 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
         task = null
     }
 
-    private fun updateActionBar(player: Player) {
+    private fun buildActionBarText(player: Player): String {
         val data      = plugin.levelManager.getPlayerData(player)
         val maxHp     = player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.value ?: 20.0
         val currentHp = player.health
@@ -48,12 +56,10 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
         // 부스트 세그먼트
         val boostSegment = plugin.xpBoostManager.getActionBarSegment(player.uniqueId)
 
-        val text = "${hpColor}[ ❤ ${String.format("%.1f", currentHp)} §7/ §f${String.format("%.1f", maxHp)} ${hpColor}]" +
+        return "${hpColor}[ ❤ ${String.format("%.1f", currentHp)} §7/ §f${String.format("%.1f", maxHp)} ${hpColor}]" +
                 "  §e[ Lv.$level ]" +
                 "  §7[ $xpDisplay §7]" +
                 (if (boostSegment != null) "  $boostSegment" else "") +
                 (if (guildName != null) "  §a[ $guildName ]" else "")
-
-        player.sendActionBar(Component.text(text))
     }
 }

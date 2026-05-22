@@ -269,9 +269,15 @@ class UpgradeView(private val rpg: CRRPGCorePlugin)
             else -> {}
         }
 
+        val itemName = item.itemMeta?.displayName ?: item.type.name
+
         when (result.outcome) {
             UpgradeManager.UpgradeOutcome.SUCCESS -> {
-                resultItem = item.clone(); itemSlot = null
+                resultItem = result.resultItem; itemSlot = null
+                // 강화 성공 시 자동 귀속 (config upgrade.auto-bind: true 일 때)
+                if (rpg.config.getBoolean("upgrade.auto-bind", false) && result.resultItem != null) {
+                    rpg.rpgItemManager.bindItem(result.resultItem!!, player.uniqueId, player.name)
+                }
                 player.sendMessage(mc.format(mc.msgUpgradeSuccess,
                     "prev" to result.prevLevel.toString(), "new" to result.newLevel.toString()))
                 player.playSound(player.location, Sound.BLOCK_ANVIL_USE, 1f, 1.5f)
@@ -280,23 +286,30 @@ class UpgradeView(private val rpg: CRRPGCorePlugin)
                 itemSlot = null; resultItem = null
                 player.sendMessage(mc.msgUpgradeBreak)
                 player.playSound(player.location, Sound.BLOCK_ANVIL_BREAK, 1f, 0.8f)
-                // 파괴 후 2초 뒤 GUI 자동 닫기 (빈 슬롯을 잠깐 보여준 뒤 닫힘)
-                org.bukkit.Bukkit.getScheduler().runTaskLater(rpg, Runnable {
-                    if (openViews.containsKey(player.uniqueId)) player.closeInventory()
-                }, 40L)
             }
             UpgradeManager.UpgradeOutcome.FAIL_DOWN -> {
-                resultItem = item.clone(); itemSlot = null
+                resultItem = result.resultItem; itemSlot = null
                 player.sendMessage(mc.format(mc.msgUpgradeDown,
                     "prev" to result.prevLevel.toString(), "new" to result.newLevel.toString()))
                 player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 0.8f)
             }
             UpgradeManager.UpgradeOutcome.FAIL_KEEP -> {
-                resultItem = item.clone(); itemSlot = null
+                resultItem = result.resultItem; itemSlot = null
                 player.sendMessage(mc.format(mc.msgUpgradeFail, "prev" to result.prevLevel.toString()))
                 player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
             }
         }
+
+        // 강화 기록 저장
+        rpg.upgradeHistoryManager.record(
+            player.uniqueId, itemName, result.outcome, result.prevLevel, result.newLevel
+        )
+
+        // ItemUpgradeEvent 발행
+        val upgradeEvent = ItemUpgradeEvent(
+            player, result.resultItem ?: item, result.outcome, result.prevLevel, result.newLevel
+        )
+        org.bukkit.Bukkit.getPluginManager().callEvent(upgradeEvent)
 
         rerender()
     }

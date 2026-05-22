@@ -111,7 +111,7 @@ class AppraisalManager(private val plugin: CRRPGCorePlugin) {
                 val meta = item.itemMeta ?: return
                 val lore = (meta.lore ?: mutableListOf()).toMutableList()
                 sm.rebuildOurBlock(lore, grade, sm.getSocketCount(item), true, roll.lines,
-                    socketRemain, appraisalRemain, base + upgBonus)
+                    socketRemain, appraisalRemain, base + upgBonus, item = item)
                 meta.lore = lore
                 item.itemMeta = meta
             }
@@ -120,7 +120,7 @@ class AppraisalManager(private val plugin: CRRPGCorePlugin) {
                 val meta = item.itemMeta ?: return
                 val lore = (meta.lore ?: mutableListOf()).toMutableList()
                 sm.rebuildOurBlock(lore, grade, sm.getSocketCount(item), true, roll.lines,
-                    socketRemain, appraisalRemain, null)
+                    socketRemain, appraisalRemain, null, item = item)
                 meta.lore = lore
                 item.itemMeta = meta
             }

@@ -4,6 +4,8 @@ import org.bukkit.entity.Player
 import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerItemHeldEvent
 import kotlin.random.Random
 
 /**
@@ -106,13 +108,17 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
             val totalLs = (wStat?.lifeSteal ?: 0.0) + jewelLs
             val actualDmg = event.damage
 
-            if (totalLs > 0.0 && Random.nextDouble() * 100.0 < totalLs) {
+            if (totalLs > 0.0) {
+                val healAmount = actualDmg * (totalLs / 100.0)
                 val maxHp = attacker.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH)?.value ?: 20.0
-                attacker.health = (attacker.health + actualDmg).coerceAtMost(maxHp)
+                attacker.health = (attacker.health + healAmount).coerceAtMost(maxHp)
                 attacker.sendMessage(plugin.msgCfg.format(plugin.msgCfg.msgLifeSteal,
-                    "amount" to String.format("%.1f", actualDmg)))
+                    "amount" to String.format("%.1f", healAmount)))
             }
         }
+
+        // 방어구 스탯 캐시 무효화 (피격자 방어구 변경 가능성)
+        plugin.rpgItemManager.invalidateArmorCache(victim.uniqueId)
 
         val mc = plugin.msgCfg
         if (mc.showCombatIn) {
@@ -123,6 +129,47 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
                 "defense"  to String.format("%.1f", effectiveDef),
                 "pen"      to String.format("%.1f", penPct)
             ))
+        }
+    }
+
+    // 장비 슬롯 변경 시 방어구 스탯 캐시 무효화 (#6)
+    @Subscribe(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onInventoryClick(event: InventoryClickEvent) {
+        val player = event.whoClicked as? Player ?: return
+        val slot = event.rawSlot
+        // 방어구 슬롯: 5(헬멧), 6(흉갑), 7(레깅스), 8(부츠)
+        if (slot in 5..8 || event.slot in 36..39) {
+            plugin.rpgItemManager.invalidateArmorCache(player.uniqueId)
+        }
+    }
+
+    @Subscribe(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onItemHeld(event: PlayerItemHeldEvent) {
+        // 손에 든 무기 변경 시에는 보석 캐시도 무효화
+        plugin.jewelManager.invalidateStatsCache(event.player.uniqueId)
+    }
+
+    @Subscribe(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onItemDrop(event: org.bukkit.event.player.PlayerDropItemEvent) {
+        val player = event.player
+        val item   = event.itemDrop.itemStack
+        if (!plugin.rpgItemManager.isBound(item)) return
+        val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
+        if (owner != player.uniqueId) {
+            event.isCancelled = true
+            player.sendMessage("§c[!] §c귀속된 아이템은 버릴 수 없습니다.")
+        }
+    }
+
+    @Subscribe(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onPickup(event: org.bukkit.event.entity.EntityPickupItemEvent) {
+        val player = event.entity as? Player ?: return
+        val item   = event.item.itemStack
+        if (!plugin.rpgItemManager.isBound(item)) return
+        val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
+        if (owner != player.uniqueId) {
+            event.isCancelled = true
+            player.sendMessage("§c[!] §c다른 플레이어에게 귀속된 아이템입니다.")
         }
     }
 }

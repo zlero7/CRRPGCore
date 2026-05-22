@@ -86,6 +86,8 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
         var leveledUp    = false
         var reachedMax   = false
 
+        val previousLevel = currentLevel
+
         while (currentLevel < maxLevel) {
             val requiredXp = getRequiredXpForLevel(currentLevel)
             if (currentXp < requiredXp) break
@@ -93,21 +95,24 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
             currentLevel++
             leveledUp     = true
 
+            plugin.statManager.grantPoints(player)
+
             if (currentLevel >= maxLevel) {
                 reachedMax = true
                 currentXp  = 0L
                 break
             }
-
-            sendTitle(player, titleLevelUp, subtitleLevelUp.replace("{level}", currentLevel.toString()))
-            player.playSound(player.location, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f)
-            plugin.statManager.grantPoints(player)
         }
 
-        if (reachedMax) {
-            sendTitle(player, titleMaxLevel, subtitleMaxLevel.replace("{level}", currentLevel.toString()))
+        if (leveledUp) {
+            if (reachedMax) {
+                sendTitle(player, titleMaxLevel, subtitleMaxLevel.replace("{level}", currentLevel.toString()))
+            } else {
+                sendTitle(player, titleLevelUp, subtitleLevelUp.replace("{level}", currentLevel.toString()))
+            }
             player.playSound(player.location, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f)
-            plugin.statManager.grantPoints(player)
+            val event = PlayerLevelUpEvent(player, previousLevel, currentLevel, reachedMax)
+            org.bukkit.Bukkit.getPluginManager().callEvent(event)
         }
 
         if (showXpOnGain && !leveledUp) {
@@ -136,14 +141,12 @@ class LevelManager(private val plugin: CRRPGCorePlugin) {
         )
         player.showTitle(
             Title.title(
-                Component.text(titleStr.translateColorCodes()),
-                Component.text(subtitleStr.translateColorCodes()),
+                Component.text(titleStr),
+                Component.text(subtitleStr),
                 times
             )
         )
     }
-
-    private fun String.translateColorCodes(): String = this.replace("§", "§")
 
     // ─── EXP 바 업데이트 ─────────────────────────────────────────────────
     private fun updateExpBar(player: Player, data: PlayerData) {

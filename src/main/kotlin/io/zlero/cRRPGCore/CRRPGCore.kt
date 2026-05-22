@@ -22,8 +22,9 @@ class CRRPGCorePlugin : CRPlugin() {
     lateinit var actionBarManager:    ActionBarManager
     lateinit var appraisalManager:    AppraisalManager
     lateinit var socketManager:       SocketManager
-    lateinit var xpBoostManager:      XpBoostManager
-    lateinit var migrationManager:    MigrationManager
+    lateinit var xpBoostManager:          XpBoostManager
+    lateinit var migrationManager:        MigrationManager
+    lateinit var upgradeHistoryManager:   UpgradeHistoryManager
 
     var economy: Economy? = null
 
@@ -99,7 +100,8 @@ class CRRPGCorePlugin : CRPlugin() {
         appraisalManager  = inject<AppraisalManager>().also         { it.loadConfig(cfg) }
         socketManager     = inject<SocketManager>().also            { it.loadConfig(cfg) }
         xpBoostManager    = inject<XpBoostManager>()
-        migrationManager  = MigrationManager(this)
+        migrationManager        = MigrationManager(this)
+        upgradeHistoryManager   = UpgradeHistoryManager()
         XpBoostScroll.init(this)
 
         // object 기반 리스너 직접 등록
@@ -125,6 +127,14 @@ class CRRPGCorePlugin : CRPlugin() {
 
         actionBarManager.start()
 
+        // PAPI 연동
+        if (server.pluginManager.getPlugin("PlaceholderAPI") != null) {
+            RpgCorePlaceholderExpansion(this).register()
+            logger.info("[CRRPGCore] PlaceholderAPI 연동 완료")
+        }
+
+        CRRPGCoreAPI.init(this)
+
         // 만료된 XP 부스트 엔트리 주기적 정리 (5분마다)
         scheduler.runTimerAsync(6000L, 6000L) {
             xpBoostManager.pruneExpired()
@@ -135,7 +145,9 @@ class CRRPGCorePlugin : CRPlugin() {
 
     override fun onCRDisabled() {
         UpgradeView.closeAll()
+        JewelCombineView.closeAll()
         actionBarManager.stop()
+        CRRPGCoreAPI.shutdown()
         // PlayerRepository dirty 데이터 자동 저장 + DB 연결 종료는
         // CRRPGDatabaseModule.@Teardown → registry.teardown() 에서 처리
         logger.info("[CRRPGCore] 비활성화.")

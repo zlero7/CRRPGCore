@@ -2,7 +2,7 @@ name: CRRPGCore
 version: '1.1.0'
 main: io.zlero.cRRPGCore.CRRPGCorePlugin
 api-version: '1.20'
-softdepend: [CRGuild]
+softdepend: [CRGuild, PlaceholderAPI]
 depend: [CRFramework, Vault]
 
 commands:
