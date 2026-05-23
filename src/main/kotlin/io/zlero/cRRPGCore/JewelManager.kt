@@ -14,9 +14,11 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
     private val statsCache = ConcurrentHashMap<UUID, Map<JewelStatType, Double>>()
 
     // ── NBT 키 ──────────────────────────────────────────────────────────
-    val keyJewelGrade  = NamespacedKey(plugin, "jewel_grade")      // 보석 등급 id
-    val keyJewelStats  = NamespacedKey(plugin, "jewel_stats")      // 스텟 직렬화 문자열
-    val keyAppraised   = NamespacedKey(plugin, "jewel_appraised")  // 감정 여부
+    val keyJewelGrade    = NamespacedKey(plugin, "jewel_grade")      // 보석 등급 id
+    val keyJewelStats    = NamespacedKey(plugin, "jewel_stats")      // 스텟 직렬화 문자열
+    val keyAppraised     = NamespacedKey(plugin, "jewel_appraised")  // 감정 여부
+    val keyJewelRerollCnt = NamespacedKey(plugin, "jewel_reroll_cnt") // 재감정 횟수
+    val keyJewelMaxReroll = NamespacedKey(plugin, "jewel_max_reroll") // 최대 재감정 횟수
 
     // 룬 슬롯은 RoonSlotRepository가 캐시 및 저장 관리
 
@@ -98,10 +100,64 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         val stats     = types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
 
         val serialized = stats.joinToString("|") { "${it.type.key}:${it.value}" }
-        pdc.set(keyJewelStats,  PersistentDataType.STRING, serialized)
-        pdc.set(keyAppraised,   PersistentDataType.BYTE, 1)
+        pdc.set(keyJewelStats,     PersistentDataType.STRING,  serialized)
+        pdc.set(keyAppraised,      PersistentDataType.BYTE,    1)
+        pdc.set(keyJewelRerollCnt, PersistentDataType.INTEGER, 0)
+        if (!pdc.has(keyJewelMaxReroll, PersistentDataType.INTEGER)) {
+            pdc.set(keyJewelMaxReroll, PersistentDataType.INTEGER,
+                plugin.appraisalManager.defaultMaxJewelReroll)
+        }
+        item.itemMeta = meta
 
+        rebuildJewelLore(item, grade, stats)
+        return true
+    }
+
+    // ── 재감정: 스텟 재롤 ───────────────────────────────────────────────
+    fun reappraise(item: ItemStack): Boolean {
+        val meta = item.itemMeta ?: return false
+        val pdc  = meta.persistentDataContainer
+        val gradeId = pdc.get(keyJewelGrade, PersistentDataType.STRING) ?: return false
+        val grade   = JewelGrade.fromId(gradeId) ?: return false
+
+        val cur = pdc.get(keyJewelRerollCnt, PersistentDataType.INTEGER) ?: 0
+        val max = pdc.get(keyJewelMaxReroll,  PersistentDataType.INTEGER)
+            ?: plugin.appraisalManager.defaultMaxJewelReroll
+        if (max != -1 && cur >= max) return false
+
+        val lineCount = (grade.minLines..grade.maxLines).random()
+        val types     = JewelStat.ALL_TYPES.shuffled().take(lineCount)
+        val stats     = types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
+
+        val serialized = stats.joinToString("|") { "${it.type.key}:${it.value}" }
+        pdc.set(keyJewelStats,     PersistentDataType.STRING,  serialized)
+        pdc.set(keyJewelRerollCnt, PersistentDataType.INTEGER, cur + 1)
+        item.itemMeta = meta
+
+        rebuildJewelLore(item, grade, stats)
+        return true
+    }
+
+    // ── 남은 재감정 횟수 ─────────────────────────────────────────────────
+    fun getJewelRerollRemaining(item: ItemStack): Int {
+        val pdc = item.itemMeta?.persistentDataContainer ?: return 0
+        val cur = pdc.get(keyJewelRerollCnt, PersistentDataType.INTEGER) ?: 0
+        val max = pdc.get(keyJewelMaxReroll,  PersistentDataType.INTEGER)
+            ?: plugin.appraisalManager.defaultMaxJewelReroll
+        return if (max == -1) -1 else (max - cur).coerceAtLeast(0)
+    }
+
+    fun isJewelRerollMaxReached(item: ItemStack): Boolean {
+        val rem = getJewelRerollRemaining(item)
+        return rem == 0
+    }
+
+    // ── 로어 재구성 ─────────────────────────────────────────────────────
+    private fun rebuildJewelLore(item: ItemStack, grade: JewelGrade, stats: List<JewelStat>) {
+        val meta = item.itemMeta ?: return
         meta.setDisplayName("${grade.color}✦ ${grade.displayName} 보석")
+        val remaining = getJewelRerollRemaining(item)
+        val remainStr = if (remaining < 0) "∞" else "${remaining}회"
         val lore = mutableListOf(
             "§8──────────────────",
             "  ${grade.color}* §f등급 §8: ${grade.color}${grade.displayName}",
@@ -109,10 +165,10 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         )
         stats.forEach { lore.add(it.toLoreLine()) }
         lore.add("§8──────────────────")
+        lore.add("  §7재감정 §8: §e${remainStr} 남음")
         lore.add("  §8[감정된 보석]")
         meta.lore = lore
         item.itemMeta = meta
-        return true
     }
 
     // ── 보석 여부 확인 ───────────────────────────────────────────────────

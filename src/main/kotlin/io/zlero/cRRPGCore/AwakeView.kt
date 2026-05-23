@@ -117,7 +117,11 @@ class AwakeView(private val rpg: CRRPGCorePlugin)
         // 실행 버튼 (상태에 따라 동적 표시)
         button(slot = SLOT_ACTION) {
             item { player -> buildActionButton(player) }
-            onClick { player -> processAwake(player) }
+            onClick { player ->
+                // 슬롯이 비어있으면 무시 (이중 메시지 방지)
+                if (weaponItem == null || scrollItem == null) return@onClick
+                processAwake(player)
+            }
         }
     }
 
@@ -152,21 +156,43 @@ class AwakeView(private val rpg: CRRPGCorePlugin)
         val sm  = rpg.socketManager
         val eco = rpg.economy
 
-        // 보석 감정
+        // 보석 감정 / 재감정
         if (jm.isJewel(weapon)) {
             val isAppraisal = scrollName == mc.scrollName
-            if (!isAppraisal)            return makeItem(Material.BARRIER, mc.errJewelOnly)
-            if (jm.isAppraised(weapon))  return makeItem(Material.BARRIER, mc.errJewelAlreadyApp)
+            if (!isAppraisal) return makeItem(Material.BARRIER, mc.errJewelOnly)
 
+            if (jm.isAppraised(weapon)) {
+                // 재감정 버튼
+                if (jm.isJewelRerollMaxReached(weapon))
+                    return makeItem(Material.BARRIER, mc.errJewelReappraisalMax)
+                val cost      = am.jewelReappraisalCost
+                val hasEnough = eco == null || eco.has(player, cost.toDouble())
+                val remaining = jm.getJewelRerollRemaining(weapon)
+                val remainStr = if (remaining < 0) "∞" else "${remaining}회"
+                return makeItem(
+                    if (hasEnough) Material.ENCHANTED_BOOK else Material.BARRIER,
+                    if (hasEnough) mc.guiAwakeActionOk else mc.guiAwakeNoMoney,
+                    buildList {
+                        add("${mc.guiAwakeLabelAction}§e보석 재감정")
+                        add(mc.format(mc.guiAwakeLabelCost, "cost" to cost.toString()))
+                        add("§7남은 재감정 §8: §e${remainStr}")
+                        if (!hasEnough) add(mc.guiAwakeLabelNoMoney) else add(mc.guiAwakeLabelOk)
+                    }
+                )
+            }
+
+            // 최초 감정 버튼
             val cost      = am.appraisalCost
             val hasEnough = eco == null || eco.has(player, cost.toDouble())
-            val mat       = if (hasEnough) Material.ENCHANTED_BOOK else Material.BARRIER
-            val title     = if (hasEnough) mc.guiAwakeActionOk else mc.guiAwakeNoMoney
-            return makeItem(mat, title, buildList {
-                add("${mc.guiAwakeLabelAction}${mc.guiAwakeLabelAppraise}")
-                add(mc.format(mc.guiAwakeLabelCost, "cost" to cost.toString()))
-                if (!hasEnough) add(mc.guiAwakeLabelNoMoney) else add(mc.guiAwakeLabelOk)
-            })
+            return makeItem(
+                if (hasEnough) Material.ENCHANTED_BOOK else Material.BARRIER,
+                if (hasEnough) mc.guiAwakeActionOk else mc.guiAwakeNoMoney,
+                buildList {
+                    add("${mc.guiAwakeLabelAction}${mc.guiAwakeLabelAppraise}")
+                    add(mc.format(mc.guiAwakeLabelCost, "cost" to cost.toString()))
+                    if (!hasEnough) add(mc.guiAwakeLabelNoMoney) else add(mc.guiAwakeLabelOk)
+                }
+            )
         }
 
         val gradeId = weapon.itemMeta?.persistentDataContainer
@@ -215,14 +241,35 @@ class AwakeView(private val rpg: CRRPGCorePlugin)
         val rpm = rpg.rpgItemManager
         val eco = rpg.economy
 
-        // 보석 감정
+        // 보석 감정 / 재감정
         if (jm.isJewel(weapon)) {
             if (scrollName != mc.scrollName) {
                 player.sendMessage(mc.errJewelOnly); sm.playFail(player); return
             }
+
             if (jm.isAppraised(weapon)) {
-                player.sendMessage(mc.errJewelAlreadyApp); sm.playFail(player); return
+                // 재감정
+                if (jm.isJewelRerollMaxReached(weapon)) {
+                    player.sendMessage(mc.errJewelReappraisalMax); sm.playFail(player); return
+                }
+                val cost = am.jewelReappraisalCost
+                if (eco != null && !eco.has(player, cost.toDouble())) {
+                    player.sendMessage(mc.format(mc.errJewelNotEnoughMoney, "cost" to cost.toString()))
+                    sm.playFail(player); return
+                }
+                consumeScroll()
+                eco?.withdrawPlayer(player, cost.toDouble())
+                if (jm.reappraise(weapon)) {
+                    player.sendMessage(mc.format(mc.msgJewelReappraisalOk, "cost" to cost.toString()))
+                    sm.playReroll(player)
+                } else {
+                    player.sendMessage(mc.errJewelAppraisalFail); sm.playFail(player)
+                }
+                rerender()
+                return
             }
+
+            // 최초 감정
             val cost = am.appraisalCost
             if (eco != null && !eco.has(player, cost.toDouble())) {
                 player.sendMessage(mc.format(mc.errJewelNotEnoughMoney, "cost" to cost.toString()))
@@ -234,8 +281,7 @@ class AwakeView(private val rpg: CRRPGCorePlugin)
                 player.sendMessage(mc.format(mc.msgJewelAppraisalOk, "cost" to cost.toString()))
                 sm.playSuccess(player)
             } else {
-                player.sendMessage(mc.errJewelAppraisalFail)
-                sm.playFail(player)
+                player.sendMessage(mc.errJewelAppraisalFail); sm.playFail(player)
             }
             rerender()
             return

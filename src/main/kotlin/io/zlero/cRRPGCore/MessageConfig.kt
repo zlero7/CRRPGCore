@@ -54,11 +54,13 @@ class MessageConfig(private val plugin: CRRPGCorePlugin) {
     var msgUpgradeBreak        = "§c⚒ 강화 실패! §f아이템이 §c파괴§f되었습니다."
 
     // 보석
-    var errJewelOnly          = "§c보석에는 감정서만 사용 가능합니다."
-    var errJewelAlreadyApp    = "§c이미 감정된 보석입니다."
-    var errJewelNotEnoughMoney= "§c잔액이 부족합니다. §8(필요: §e{cost}원§8)"
-    var msgJewelAppraisalOk   = "§6[보석 감정] §f감정 완료! §7-{cost}원"
-    var errJewelAppraisalFail = "§c보석 감정 실패."
+    var errJewelOnly           = "§c보석에는 감정서만 사용 가능합니다."
+    var errJewelAlreadyApp     = "§c이미 감정된 보석입니다."
+    var errJewelNotEnoughMoney = "§c잔액이 부족합니다. §8(필요: §e{cost}원§8)"
+    var msgJewelAppraisalOk    = "§6[보석 감정] §f감정 완료! §7-{cost}원"
+    var msgJewelReappraisalOk  = "§6[보석 재감정] §f스텟이 새로 결정되었습니다! §7-{cost}원"
+    var errJewelAppraisalFail  = "§c보석 감정 실패."
+    var errJewelReappraisalMax = "§c보석 재감정 횟수를 모두 사용했습니다."
 
     // 루(보석 장착)
     var errJewelOnly2        = "§c[!] 보석만 장착할 수 있습니다."
@@ -358,9 +360,11 @@ class MessageConfig(private val plugin: CRRPGCorePlugin) {
         // 보석
         errJewelOnly           = config.getString("$m.err-jewel-only",           errJewelOnly)!!
         errJewelAlreadyApp     = config.getString("$m.err-jewel-already-app",    errJewelAlreadyApp)!!
-        errJewelNotEnoughMoney = config.getString("$m.err-jewel-not-enough-money",errJewelNotEnoughMoney)!!
-        msgJewelAppraisalOk   = config.getString("$m.jewel-appraisal-ok",       msgJewelAppraisalOk)!!
-        errJewelAppraisalFail  = config.getString("$m.err-jewel-appraisal-fail", errJewelAppraisalFail)!!
+        errJewelNotEnoughMoney = config.getString("$m.err-jewel-not-enough-money", errJewelNotEnoughMoney)!!
+        msgJewelAppraisalOk    = config.getString("$m.jewel-appraisal-ok",        msgJewelAppraisalOk)!!
+        msgJewelReappraisalOk  = config.getString("$m.jewel-reappraisal-ok",      msgJewelReappraisalOk)!!
+        errJewelAppraisalFail  = config.getString("$m.err-jewel-appraisal-fail",  errJewelAppraisalFail)!!
+        errJewelReappraisalMax = config.getString("$m.err-jewel-reappraisal-max", errJewelReappraisalMax)!!
 
         // 루
         errJewelOnly2        = config.getString("$m.err-jewel-only-2",       errJewelOnly2)!!

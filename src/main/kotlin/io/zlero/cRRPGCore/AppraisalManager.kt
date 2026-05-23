@@ -12,14 +12,18 @@ class AppraisalManager(private val plugin: CRRPGCorePlugin) {
     val keyAppraisalRerollCnt = NamespacedKey(plugin, "rpg_appraisal_reroll_cnt")
     val keyAppraisalMaxReroll = NamespacedKey(plugin, "rpg_appraisal_max_reroll")
 
-    var appraisalCost: Int       = 30_000
-    var appraisalRerollCost: Int = 30_000
+    var appraisalCost: Int          = 30_000
+    var appraisalRerollCost: Int    = 30_000
+    var jewelReappraisalCost: Int   = 20_000
     private var defaultMaxAppraisalReroll: Int = -1
+    var defaultMaxJewelReroll: Int  = -1
 
     fun loadConfig(config: FileConfiguration) {
-        appraisalCost             = config.getInt("economy.appraisal-cost",        30_000)
-        appraisalRerollCost       = config.getInt("economy.appraisal-reroll-cost", 30_000)
+        appraisalCost             = config.getInt("economy.appraisal-cost",           30_000)
+        appraisalRerollCost       = config.getInt("economy.appraisal-reroll-cost",    30_000)
+        jewelReappraisalCost      = config.getInt("economy.jewel-reappraisal-cost",   20_000)
         defaultMaxAppraisalReroll = config.getInt("reroll.default-max-appraisal-reroll", -1)
+        defaultMaxJewelReroll     = config.getInt("reroll.default-max-jewel-reroll",     -1)
     }
 
     fun isAppraised(item: ItemStack): Boolean {
