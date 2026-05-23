@@ -20,7 +20,7 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
     compileOnly("com.github.zlero7:CRGuild:1.0.2")
-    compileOnly("com.github.zlero7:CRFramework:v1.0.3")
+    compileOnly("com.github.zlero7:CRFramework:v1.0.4")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("com.github.PlaceholderAPI:PlaceholderAPI:2.11.6")
     // HikariCP: CRFramework jar에 shaded 내장돼 있으므로 compileOnly (런타임 중복 방지)
