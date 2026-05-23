@@ -69,7 +69,7 @@ object StatResetScroll : Listener {
         player.sendMessage(mc.msgStatResetOk)
         player.sendMessage(mc.format(mc.msgStatResetDetail,
             "points" to totalPoints.toString(),
-            "remaining" to data.statPoints.toString()))
+            "remaining" to (data.statPoints + totalPoints).toString()))
         player.playSound(player.location, org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1f)
     }
 }

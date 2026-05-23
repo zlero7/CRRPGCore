@@ -165,11 +165,21 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
     fun onPickup(event: org.bukkit.event.entity.EntityPickupItemEvent) {
         val player = event.entity as? Player ?: return
         val item   = event.item.itemStack
-        if (!plugin.rpgItemManager.isBound(item)) return
-        val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
-        if (owner != player.uniqueId) {
-            event.isCancelled = true
-            player.sendMessage("§c[!] §c다른 플레이어에게 귀속된 아이템입니다.")
+
+        // 이미 귀속된 아이템 — 소유자 확인
+        if (plugin.rpgItemManager.isBound(item)) {
+            val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
+            if (owner != player.uniqueId) {
+                event.isCancelled = true
+                player.sendMessage("§c[!] §c다른 플레이어에게 귀속된 아이템입니다.")
+            }
+            return
+        }
+
+        // RPG 아이템 최초 획득 시 자동 귀속
+        if (plugin.rpgItemManager.isRpgItem(item)) {
+            plugin.rpgItemManager.bindItem(item, player.uniqueId, player.name)
+            event.item.itemStack = item   // 엔티티 ItemStack 갱신
         }
     }
 }

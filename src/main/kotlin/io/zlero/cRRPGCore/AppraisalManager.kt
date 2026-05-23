@@ -153,7 +153,7 @@ class AppraisalManager(private val plugin: CRRPGCorePlugin) {
                         2    -> { val v = Random.nextDouble(r.critDmgMin, r.critDmgMax); critDmg += v
                                   StatLine(mc.apprWeapCritDLabel, "§e${String.format("%.0f", v)}%") }
                         3    -> { val v = Random.nextDouble(r.atkSpeedMin, r.atkSpeedMax); atkSpd += v
-                                  StatLine(mc.apprWeapSpdLabel, "§a${String.format("%.1f", v)}%") }
+                                  StatLine(mc.apprWeapSpdLabel, "§a${String.format("%.1f", v)}") }
                         4    -> { val v = Random.nextDouble(r.penMin, r.penMax); pen += v
                                   StatLine(mc.apprWeapPenLabel, "§b${String.format("%.1f", v)}%") }
                         else -> { val v = Random.nextDouble(r.lsMin, r.lsMax); ls += v

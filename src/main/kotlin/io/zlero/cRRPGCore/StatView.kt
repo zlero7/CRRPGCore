@@ -46,7 +46,7 @@ class StatView(private val rpg: CRRPGCorePlugin)
                         "  §e✦ §7레벨업 시 §a${sm.pointsPerLevel}P §7지급",
                         "§r",
                         "  §7좌클릭 §8: §f+1 분배",
-                        "  §7우클릭 §8(각 스텟 버튼) §8: §f+10 분배"
+                        "  §7하단 버튼 클릭 §8: §f최대 +10 분배"
                     )
                 )
             }
