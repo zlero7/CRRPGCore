@@ -43,10 +43,27 @@ class CRRPGDatabaseModule(private val plugin: JavaPlugin) {
         val config = buildConfig(plugin)
         DataSourceFactory.connect(config, plugin.dataFolder)
 
-        transaction {
-            SchemaUtils.createMissingTablesAndColumns(PlayerDataTable, RoonSlotTable)
+        try {
+            transaction {
+                SchemaUtils.createMissingTablesAndColumns(PlayerDataTable, RoonSlotTable)
+            }
+            plugin.logger.info("[CRRPGCore/DB] ${config.type} 연결 완료, 테이블 초기화")
+        } catch (e: Exception) {
+            plugin.logger.severe("[CRRPGCore/DB] 테이블 생성 실패: ${e.message}")
+            e.printStackTrace()
         }
-        plugin.logger.info("[CRRPGCore/DB] ${config.type} 연결 완료, 테이블 초기화")
+    }
+
+    /** 플러그인 enable 시점에 한번 더 테이블 존재를 보장하는 보조 메서드 */
+    fun ensureTables() {
+        try {
+            transaction {
+                SchemaUtils.createMissingTablesAndColumns(PlayerDataTable, RoonSlotTable)
+            }
+        } catch (e: Exception) {
+            plugin.logger.severe("[CRRPGCore/DB] ensureTables 실패: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     @Teardown

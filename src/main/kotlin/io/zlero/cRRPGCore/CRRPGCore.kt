@@ -81,6 +81,9 @@ class CRRPGCorePlugin : CRPlugin() {
         }
 
         // DB 연결 + 테이블 생성은 CRRPGDatabaseModule.@Setup 에서 이미 완료
+        // @Setup 실패 시를 대비해 enable 시점에도 테이블 존재를 한번 더 보장
+        inject<CRRPGDatabaseModule>().ensureTables()
+
         // PlayerStorageListener 수동 등록 → PlayerRepository onJoin/onQuit 트리거
         playerDataRepository = inject<PlayerDataRepository>()
         roonSlotRepository   = inject<RoonSlotRepository>()
