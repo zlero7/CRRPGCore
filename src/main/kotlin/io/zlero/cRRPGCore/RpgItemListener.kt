@@ -60,16 +60,21 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
 
         val mc = plugin.msgCfg
         if (mc.showCombatOut) {
+            // StatListener.onAttack(HIGHEST)가 이 이후에 strBonus를 더하므로
+            // 로그에는 미리 계산한 strBonus를 합산해 실제 데미지를 표시
+            val strBonus   = plugin.statManager.getBonusDamage(attacker)
+            val totalDamage = damage + strBonus
             val targetName = (event.entity as? Player)?.name ?: event.entity.type.name
             val critTag    = if (isCrit) " §e[치명타]" else ""
             attacker.sendMessage(mc.format(mc.msgCombatOut,
                 "target"  to targetName,
-                "damage"  to String.format("%.1f", damage),
+                "damage"  to String.format("%.1f", totalDamage),
                 "crit"    to critTag,
                 "base"    to baseDmg.toString(),
                 "upg"     to upgBonus.toString(),
                 "appr"    to wStat.damage.toString(),
-                "jewel"   to jewelDmg.toString()
+                "jewel"   to jewelDmg.toString(),
+                "str"     to strBonus.toInt().toString()
             ))
         }
     }

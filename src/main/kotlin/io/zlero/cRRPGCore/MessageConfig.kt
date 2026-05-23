@@ -74,7 +74,7 @@ class MessageConfig(private val plugin: CRRPGCorePlugin) {
     var msgDodgeSuccess      = "§b[!] §f회피 성공"
     var errWeaponNoDamage    = "§c[!] 무기 기본 데미지가 설정되지 않았습니다."
     var msgCombatCrit        = "§e✦ 치명타!"
-    var msgCombatOut         = "§8[§aOUT§8] §f{target} §c{damage}§f데미지{crit}  §8(기본:{base} 강화:+{upg} 감정:+{appr} 보석:+{jewel})"
+    var msgCombatOut         = "§8[§aOUT§8] §f{target} §c{damage}§f데미지{crit}  §8(기본:{base} 강화:+{upg} 감정:+{appr} 보석:+{jewel} 힘:+{str})"
     var msgArmorEvasion      = "§b[!] §f장비 회피 성공!"
     var msgArmorEvasionFoe   = "§8[§bOUT§8] §b{target}§7이(가) 회피했습니다."
     var msgLifeSteal         = "§c♥ 흡혈! §f+{amount}"
