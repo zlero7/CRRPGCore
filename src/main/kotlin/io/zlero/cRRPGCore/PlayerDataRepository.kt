@@ -40,20 +40,16 @@ class PlayerDataRepository : PlayerRepository<PlayerData, PlayerDataTable>(Playe
     }
 
     override fun save(uuid: UUID, data: PlayerData): Unit = query {
-        val exists = PlayerDataTable
-            .select { PlayerDataTable.uuid eq uuid.toString() }
-            .count() > 0
-
-        if (exists) {
-            PlayerDataTable.update({ PlayerDataTable.uuid eq uuid.toString() }) {
-                it[level]      = data.level
-                it[xp]         = data.xp
-                it[statPoints] = data.statPoints
-                it[strength]   = data.strength
-                it[vitality]   = data.vitality
-                it[agility]    = data.agility
-            }
-        } else {
+        // UPDATE 먼저 시도 → 0행이면 신규 플레이어이므로 INSERT (SELECT 왕복 제거)
+        val updated = PlayerDataTable.update({ PlayerDataTable.uuid eq uuid.toString() }) {
+            it[level]      = data.level
+            it[xp]         = data.xp
+            it[statPoints] = data.statPoints
+            it[strength]   = data.strength
+            it[vitality]   = data.vitality
+            it[agility]    = data.agility
+        }
+        if (updated == 0) {
             PlayerDataTable.insert {
                 it[PlayerDataTable.uuid]       = uuid.toString()
                 it[PlayerDataTable.level]      = data.level

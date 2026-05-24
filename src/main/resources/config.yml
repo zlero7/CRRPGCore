@@ -58,6 +58,7 @@ economy:
   appraisal-cost: 30000
   socket-reroll-cost: 10000
   appraisal-reroll-cost: 30000
+  jewel-reappraisal-cost: 20000
 
 # ─── 소켓 설정 ────────────────────────────────
 socket:
@@ -100,6 +101,7 @@ upgrade:
 reroll:
   default-max-socket-reroll: -1
   default-max-appraisal-reroll: -1
+  default-max-jewel-reroll: -1   # -1 = 무제한
 
 # ─── 등급별 무기/방어구 스텟 범위 ──────────────
 rpg-item:
@@ -448,7 +450,9 @@ messages:
   err-jewel-already-app: "§c이미 감정된 보석입니다."
   err-jewel-not-enough-money: "§c잔액이 부족합니다. §8(필요: §e{cost}원§8)"
   jewel-appraisal-ok: "§6[보석 감정] §f감정 완료! §7-{cost}원"
+  jewel-reappraisal-ok: "§6[보석 재감정] §f스텟이 새로 결정되었습니다! §7-{cost}원"
   err-jewel-appraisal-fail: "§c보석 감정 실패."
+  err-jewel-reappraisal-max: "§c보석 재감정 횟수를 모두 사용했습니다."
 
   # 루
   err-jewel-only-2: "§c[!] 보석만 장착할 수 있습니다."

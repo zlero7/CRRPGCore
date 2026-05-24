@@ -48,15 +48,10 @@ class RoonSlotRepository(private val plugin: JavaPlugin)
 
     override fun save(uuid: UUID, data: RoonSlotData): Unit = query {
         val serialized = serializeSlots(data.slots)
-        val exists = RoonSlotTable
-            .select { RoonSlotTable.uuid eq uuid.toString() }
-            .count() > 0
-
-        if (exists) {
-            RoonSlotTable.update({ RoonSlotTable.uuid eq uuid.toString() }) {
-                it[RoonSlotTable.slots] = serialized
-            }
-        } else {
+        val updated = RoonSlotTable.update({ RoonSlotTable.uuid eq uuid.toString() }) {
+            it[RoonSlotTable.slots] = serialized
+        }
+        if (updated == 0) {
             RoonSlotTable.insert {
                 it[RoonSlotTable.uuid]  = uuid.toString()
                 it[RoonSlotTable.slots] = serialized

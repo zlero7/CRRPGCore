@@ -95,11 +95,8 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         val gradeId = pdc.get(keyJewelGrade, PersistentDataType.STRING) ?: return false
         val grade   = JewelGrade.fromId(gradeId) ?: return false
 
-        val lineCount = (grade.minLines..grade.maxLines).random()
-        val types     = JewelStat.ALL_TYPES.shuffled().take(lineCount)
-        val stats     = types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
-
-        val serialized = stats.joinToString("|") { "${it.type.key}:${it.value}" }
+        val stats      = rollJewelStats(grade)
+        val serialized = serializeStats(stats)
         pdc.set(keyJewelStats,     PersistentDataType.STRING,  serialized)
         pdc.set(keyAppraised,      PersistentDataType.BYTE,    1)
         pdc.set(keyJewelRerollCnt, PersistentDataType.INTEGER, 0)
@@ -107,9 +104,12 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
             pdc.set(keyJewelMaxReroll, PersistentDataType.INTEGER,
                 plugin.appraisalManager.defaultMaxJewelReroll)
         }
+        // remaining 계산 후 한 번에 lore까지 구성 — itemMeta set을 1회로 통합
+        val maxReroll = pdc.get(keyJewelMaxReroll, PersistentDataType.INTEGER)
+            ?: plugin.appraisalManager.defaultMaxJewelReroll
+        val remaining = if (maxReroll == -1) -1 else maxReroll
+        rebuildJewelLore(meta, grade, stats, remaining)
         item.itemMeta = meta
-
-        rebuildJewelLore(item, grade, stats)
         return true
     }
 
@@ -125,18 +125,25 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
             ?: plugin.appraisalManager.defaultMaxJewelReroll
         if (max != -1 && cur >= max) return false
 
-        val lineCount = (grade.minLines..grade.maxLines).random()
-        val types     = JewelStat.ALL_TYPES.shuffled().take(lineCount)
-        val stats     = types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
-
-        val serialized = stats.joinToString("|") { "${it.type.key}:${it.value}" }
+        val stats      = rollJewelStats(grade)
+        val serialized = serializeStats(stats)
         pdc.set(keyJewelStats,     PersistentDataType.STRING,  serialized)
         pdc.set(keyJewelRerollCnt, PersistentDataType.INTEGER, cur + 1)
+        val remaining = if (max == -1) -1 else (max - cur - 1).coerceAtLeast(0)
+        rebuildJewelLore(meta, grade, stats, remaining)
         item.itemMeta = meta
-
-        rebuildJewelLore(item, grade, stats)
         return true
     }
+
+    // ── 스텟 생성 공통 헬퍼 ──────────────────────────────────────────────
+    private fun rollJewelStats(grade: JewelGrade): List<JewelStat> {
+        val lineCount = (grade.minLines..grade.maxLines).random()
+        val types     = JewelStat.ALL_TYPES.shuffled().take(lineCount)
+        return types.map { JewelStat(it, JewelStat.randomValue(it, grade)) }
+    }
+
+    private fun serializeStats(stats: List<JewelStat>): String =
+        stats.joinToString("|") { "${it.type.key}:${it.value}" }
 
     // ── 남은 재감정 횟수 ─────────────────────────────────────────────────
     fun getJewelRerollRemaining(item: ItemStack): Int {
@@ -152,11 +159,10 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         return rem == 0
     }
 
-    // ── 로어 재구성 ─────────────────────────────────────────────────────
-    private fun rebuildJewelLore(item: ItemStack, grade: JewelGrade, stats: List<JewelStat>) {
-        val meta = item.itemMeta ?: return
+    // ── 로어 재구성 (meta에 직접 기록 — 호출 측에서 item.itemMeta = meta 1회만 수행) ──────────────
+    private fun rebuildJewelLore(meta: org.bukkit.inventory.meta.ItemMeta, grade: JewelGrade,
+                                  stats: List<JewelStat>, remaining: Int) {
         meta.setDisplayName("${grade.color}✦ ${grade.displayName} 보석")
-        val remaining = getJewelRerollRemaining(item)
         val remainStr = if (remaining < 0) "∞" else "${remaining}회"
         val lore = mutableListOf(
             "§8──────────────────",
@@ -168,7 +174,6 @@ class JewelManager(private val plugin: CRRPGCorePlugin) {
         lore.add("  §7재감정 §8: §e${remainStr} 남음")
         lore.add("  §8[감정된 보석]")
         meta.lore = lore
-        item.itemMeta = meta
     }
 
     // ── 보석 여부 확인 ───────────────────────────────────────────────────

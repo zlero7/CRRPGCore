@@ -17,16 +17,12 @@ class ActionBarManager(private val plugin: CRRPGCorePlugin) {
     }
 
     fun start() {
+        // buildActionBarText는 player.health, getAttribute 등 Bukkit 메인 스레드 전용 API를 사용하므로
+        // async 래핑 없이 메인 스레드에서 직접 실행
         task = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
-            val snapshot = Bukkit.getOnlinePlayers().toList()
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
-                val lines = snapshot.mapNotNull { p ->
-                    if (!p.isOnline) null else p to buildActionBarText(p)
-                }
-                Bukkit.getScheduler().runTask(plugin, Runnable {
-                    lines.forEach { (p, text) -> p.sendActionBar(Component.text(text)) }
-                })
-            })
+            for (player in Bukkit.getOnlinePlayers()) {
+                player.sendActionBar(Component.text(buildActionBarText(player)))
+            }
         }, 0L, 20L) // 1초(20틱) 마다 갱신
     }
 

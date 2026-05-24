@@ -196,25 +196,25 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
         item.itemMeta = meta
     }
 
-    // ── 기본값 fallback ─────────────────────────
-    private fun defaultWeaponDmgMin(g: ItemGrade) = intArrayOf(5,10,20,40,70,120)[g.ordinal]
-    private fun defaultWeaponDmgMax(g: ItemGrade) = intArrayOf(10,20,40,80,130,200)[g.ordinal]
-    private fun defaultCritChanceMin(g: ItemGrade) = doubleArrayOf(1.0,2.0,4.0,8.0,14.0,20.0)[g.ordinal]
-    private fun defaultCritChanceMax(g: ItemGrade) = doubleArrayOf(3.0,5.0,10.0,18.0,25.0,35.0)[g.ordinal]
-    private fun defaultCritDmgMin(g: ItemGrade)    = doubleArrayOf(110.0,120.0,130.0,150.0,170.0,200.0)[g.ordinal]
-    private fun defaultCritDmgMax(g: ItemGrade)    = doubleArrayOf(130.0,150.0,170.0,200.0,230.0,280.0)[g.ordinal]
-    private fun defaultAtkSpeedMin(g: ItemGrade)   = doubleArrayOf(1.0,1.0,1.2,1.5,1.8,2.2)[g.ordinal]
-    private fun defaultAtkSpeedMax(g: ItemGrade)   = doubleArrayOf(1.5,1.8,2.0,2.5,3.0,3.5)[g.ordinal]
-    private fun defaultPenMin(g: ItemGrade)  = doubleArrayOf(0.0,1.0,3.0,7.0,12.0,18.0)[g.ordinal]
-    private fun defaultPenMax(g: ItemGrade)  = doubleArrayOf(2.0,5.0,10.0,18.0,25.0,35.0)[g.ordinal]
-    private fun defaultLsMin(g: ItemGrade)   = doubleArrayOf(0.0,0.0,1.0,2.0,4.0,6.0)[g.ordinal]
-    private fun defaultLsMax(g: ItemGrade)   = doubleArrayOf(1.0,2.0,4.0,7.0,10.0,15.0)[g.ordinal]
-    private fun defaultArmorHpMin(g: ItemGrade)  = intArrayOf(10,30,60,120,200,320)[g.ordinal]
-    private fun defaultArmorHpMax(g: ItemGrade)  = intArrayOf(30,70,130,220,350,500)[g.ordinal]
-    private fun defaultDefMin(g: ItemGrade) = doubleArrayOf(1.0,4.0,8.0,15.0,25.0,38.0)[g.ordinal]
-    private fun defaultDefMax(g: ItemGrade) = doubleArrayOf(5.0,10.0,18.0,30.0,45.0,65.0)[g.ordinal]
-    private fun defaultEvaMin(g: ItemGrade) = doubleArrayOf(0.0,1.0,2.0,4.0,7.0,12.0)[g.ordinal]
-    private fun defaultEvaMax(g: ItemGrade) = doubleArrayOf(2.0,4.0,7.0,12.0,18.0,25.0)[g.ordinal]
+    // ── 기본값 fallback (companion object 상수 참조 — 호출마다 배열 생성 방지) ─────────────────────────
+    private fun defaultWeaponDmgMin(g: ItemGrade) = DEF_WPN_DMG_MIN[g.ordinal]
+    private fun defaultWeaponDmgMax(g: ItemGrade) = DEF_WPN_DMG_MAX[g.ordinal]
+    private fun defaultCritChanceMin(g: ItemGrade) = DEF_CRIT_CH_MIN[g.ordinal]
+    private fun defaultCritChanceMax(g: ItemGrade) = DEF_CRIT_CH_MAX[g.ordinal]
+    private fun defaultCritDmgMin(g: ItemGrade)    = DEF_CRIT_DM_MIN[g.ordinal]
+    private fun defaultCritDmgMax(g: ItemGrade)    = DEF_CRIT_DM_MAX[g.ordinal]
+    private fun defaultAtkSpeedMin(g: ItemGrade)   = DEF_ATK_SPD_MIN[g.ordinal]
+    private fun defaultAtkSpeedMax(g: ItemGrade)   = DEF_ATK_SPD_MAX[g.ordinal]
+    private fun defaultPenMin(g: ItemGrade)  = DEF_PEN_MIN[g.ordinal]
+    private fun defaultPenMax(g: ItemGrade)  = DEF_PEN_MAX[g.ordinal]
+    private fun defaultLsMin(g: ItemGrade)   = DEF_LS_MIN[g.ordinal]
+    private fun defaultLsMax(g: ItemGrade)   = DEF_LS_MAX[g.ordinal]
+    private fun defaultArmorHpMin(g: ItemGrade)  = DEF_ARM_HP_MIN[g.ordinal]
+    private fun defaultArmorHpMax(g: ItemGrade)  = DEF_ARM_HP_MAX[g.ordinal]
+    private fun defaultDefMin(g: ItemGrade) = DEF_DEF_MIN[g.ordinal]
+    private fun defaultDefMax(g: ItemGrade) = DEF_DEF_MAX[g.ordinal]
+    private fun defaultEvaMin(g: ItemGrade) = DEF_EVA_MIN[g.ordinal]
+    private fun defaultEvaMax(g: ItemGrade) = DEF_EVA_MAX[g.ordinal]
 
     fun getItemType(item: ItemStack): RpgItemType? {
         val raw = item.itemMeta?.persistentDataContainer
@@ -223,8 +223,9 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
     }
 
     fun getWeaponStat(item: ItemStack): WeaponStat? {
+        // itemMeta는 호출마다 새 복사본을 생성 — pdc에서 keyItemType을 직접 읽어 이중 읽기 방지
         val pdc = item.itemMeta?.persistentDataContainer ?: return null
-        if (getItemType(item) != RpgItemType.WEAPON) return null
+        if (RpgItemType.fromId(pdc.get(keyItemType, PersistentDataType.STRING) ?: return null) != RpgItemType.WEAPON) return null
         return WeaponStat(
             damage      = pdc.get(keyDamage,      PersistentDataType.INTEGER) ?: 0,
             critChance  = pdc.get(keyCritChance,  PersistentDataType.DOUBLE)  ?: 0.0,
@@ -237,7 +238,7 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
 
     fun getArmorStat(item: ItemStack): ArmorStat? {
         val pdc = item.itemMeta?.persistentDataContainer ?: return null
-        if (getItemType(item) != RpgItemType.ARMOR) return null
+        if (RpgItemType.fromId(pdc.get(keyItemType, PersistentDataType.STRING) ?: return null) != RpgItemType.ARMOR) return null
         return ArmorStat(
             health  = pdc.get(keyHealth,  PersistentDataType.INTEGER) ?: 0,
             defense = pdc.get(keyDefense, PersistentDataType.DOUBLE)  ?: 0.0,
@@ -337,5 +338,25 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
     companion object {
         private val COLOR_REGEX = Regex("§[0-9a-fk-or]")
         const val BOUND_LORE_PREFIX = "  §c※"
+
+        // 등급별 기본 스텟 범위 상수 (인덱스 = ItemGrade.ordinal)
+        private val DEF_WPN_DMG_MIN  = intArrayOf(5, 10, 20, 40, 70, 120)
+        private val DEF_WPN_DMG_MAX  = intArrayOf(10, 20, 40, 80, 130, 200)
+        private val DEF_CRIT_CH_MIN  = doubleArrayOf(1.0, 2.0, 4.0, 8.0, 14.0, 20.0)
+        private val DEF_CRIT_CH_MAX  = doubleArrayOf(3.0, 5.0, 10.0, 18.0, 25.0, 35.0)
+        private val DEF_CRIT_DM_MIN  = doubleArrayOf(110.0, 120.0, 130.0, 150.0, 170.0, 200.0)
+        private val DEF_CRIT_DM_MAX  = doubleArrayOf(130.0, 150.0, 170.0, 200.0, 230.0, 280.0)
+        private val DEF_ATK_SPD_MIN  = doubleArrayOf(1.0, 1.0, 1.2, 1.5, 1.8, 2.2)
+        private val DEF_ATK_SPD_MAX  = doubleArrayOf(1.5, 1.8, 2.0, 2.5, 3.0, 3.5)
+        private val DEF_PEN_MIN      = doubleArrayOf(0.0, 1.0, 3.0, 7.0, 12.0, 18.0)
+        private val DEF_PEN_MAX      = doubleArrayOf(2.0, 5.0, 10.0, 18.0, 25.0, 35.0)
+        private val DEF_LS_MIN       = doubleArrayOf(0.0, 0.0, 1.0, 2.0, 4.0, 6.0)
+        private val DEF_LS_MAX       = doubleArrayOf(1.0, 2.0, 4.0, 7.0, 10.0, 15.0)
+        private val DEF_ARM_HP_MIN   = intArrayOf(10, 30, 60, 120, 200, 320)
+        private val DEF_ARM_HP_MAX   = intArrayOf(30, 70, 130, 220, 350, 500)
+        private val DEF_DEF_MIN      = doubleArrayOf(1.0, 4.0, 8.0, 15.0, 25.0, 38.0)
+        private val DEF_DEF_MAX      = doubleArrayOf(5.0, 10.0, 18.0, 30.0, 45.0, 65.0)
+        private val DEF_EVA_MIN      = doubleArrayOf(0.0, 1.0, 2.0, 4.0, 7.0, 12.0)
+        private val DEF_EVA_MAX      = doubleArrayOf(2.0, 4.0, 7.0, 12.0, 18.0, 25.0)
     }
 }
