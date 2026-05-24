@@ -160,8 +160,9 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
         val player = event.player
         val item   = event.itemDrop.itemStack
         if (!plugin.rpgItemManager.isBound(item)) return
-        val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
-        if (owner != player.uniqueId) {
+        val owner = plugin.rpgItemManager.getBoundOwner(item)
+        // owner == null: PDC 손상 케이스 — 버리기 차단 (onPickupRestrict와 동일 정책)
+        if (owner == null || owner != player.uniqueId) {
             event.isCancelled = true
             player.sendMessage("§c[!] §c귀속된 아이템은 버릴 수 없습니다.")
         }

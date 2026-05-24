@@ -30,21 +30,25 @@ class StatManager(private val plugin: CRRPGCorePlugin) {
         player.sendMessage(plugin.msgCfg.format(plugin.msgCfg.msgStatPoints, "points" to amount.toString()))
     }
 
+    fun getStatCurrent(data: PlayerData, type: StatType): Int = when (type) {
+        StatType.STRENGTH -> data.strength
+        StatType.VITALITY -> data.vitality
+        StatType.AGILITY  -> data.agility
+    }
+
+    fun getStatMax(type: StatType): Int = when (type) {
+        StatType.STRENGTH -> maxStrength
+        StatType.VITALITY -> maxVitality
+        StatType.AGILITY  -> maxAgility
+    }
+
     fun allocate(player: Player, stat: StatType, amount: Int = 1): Boolean {
         if (amount <= 0) return false
         val data = plugin.levelManager.getPlayerData(player)
         if (data.statPoints < amount) return false
 
-        val current = when (stat) {
-            StatType.STRENGTH -> data.strength
-            StatType.VITALITY -> data.vitality
-            StatType.AGILITY  -> data.agility
-        }
-        val max = when (stat) {
-            StatType.STRENGTH -> maxStrength
-            StatType.VITALITY -> maxVitality
-            StatType.AGILITY  -> maxAgility
-        }
+        val current = getStatCurrent(data, stat)
+        val max     = getStatMax(stat)
         if (current + amount > max) {
             player.sendMessage(plugin.msgCfg.format(plugin.msgCfg.errStatMaxReached,
                 "stat" to stat.displayName, "max" to max.toString()))

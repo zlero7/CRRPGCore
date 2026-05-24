@@ -4,8 +4,7 @@ import org.bukkit.entity.Player
 import io.zlero.cRFramework.listener.annotation.Subscribe
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageByEntityEvent
-import org.bukkit.event.player.PlayerJoinEvent
-import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent
 
 class StatListener(private val plugin: CRRPGCorePlugin) {
 
@@ -38,9 +37,4 @@ class StatListener(private val plugin: CRRPGCorePlugin) {
     fun onArmorChange(event: PlayerArmorChangeEvent) {
         plugin.statManager.applyVitality(event.player)
     }
-
-    /**
-     * 체력(VITALITY): 접속 시 최대 HP 속성 재적용
-     * (서버 재시작 후 HP 속성이 초기화되는 것 방지)
-     */
 }

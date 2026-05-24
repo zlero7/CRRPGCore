@@ -72,8 +72,8 @@ class StatView(private val rpg: CRRPGCorePlugin)
     private fun makeStatItem(player: Player, type: StatType): ItemStack {
         val data    = rpg.levelManager.getPlayerData(player)
         val sm      = rpg.statManager
-        val current = currentOf(data, type)
-        val max     = maxOf(type, sm)
+        val current = sm.getStatCurrent(data, type)
+        val max     = sm.getStatMax(type)
         val isFull  = current >= max
         val avail   = calcAvail(data, type)
 
@@ -144,20 +144,8 @@ class StatView(private val rpg: CRRPGCorePlugin)
 
     private fun calcAvail(data: PlayerData, type: StatType): Int {
         val sm   = rpg.statManager
-        val left = maxOf(type, sm) - currentOf(data, type)
+        val left = sm.getStatMax(type) - sm.getStatCurrent(data, type)
         return data.statPoints.coerceAtMost(10).coerceAtMost(left).coerceAtLeast(0)
-    }
-
-    private fun currentOf(data: PlayerData, type: StatType) = when (type) {
-        StatType.STRENGTH -> data.strength
-        StatType.VITALITY -> data.vitality
-        StatType.AGILITY  -> data.agility
-    }
-
-    private fun maxOf(type: StatType, sm: StatManager) = when (type) {
-        StatType.STRENGTH -> sm.maxStrength
-        StatType.VITALITY -> sm.maxVitality
-        StatType.AGILITY  -> sm.maxAgility
     }
 
     private data class StatDisplay(
