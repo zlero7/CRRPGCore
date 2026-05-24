@@ -173,7 +173,7 @@ class SocketManager(private val plugin: CRRPGCorePlugin) {
         }
         // 귀속 로어는 RPG 블록 뒤에 붙어 있으므로 잘라내기 전에 저장
         val boundLines = if (cutFrom < lore.size)
-            lore.subList(cutFrom, lore.size).filter { it.contains("§c※") }
+            lore.subList(cutFrom, lore.size).filter { it.startsWith(RpgItemManager.BOUND_LORE_PREFIX) }
         else emptyList()
         if (cutFrom < lore.size) lore.subList(cutFrom, lore.size).clear()
 

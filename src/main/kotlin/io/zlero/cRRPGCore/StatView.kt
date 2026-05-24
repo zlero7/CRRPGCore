@@ -75,7 +75,7 @@ class StatView(private val rpg: CRRPGCorePlugin)
         val current = currentOf(data, type)
         val max     = maxOf(type, sm)
         val isFull  = current >= max
-        val avail   = calcAvail(player, type)
+        val avail   = calcAvail(data, type)
 
         val (mat, color, effectLine, bonusLine) = when (type) {
             StatType.STRENGTH -> StatDisplay(
@@ -108,10 +108,10 @@ class StatView(private val rpg: CRRPGCorePlugin)
                 add("  §7우클릭 §8: §f+10 §8(최대 §e${avail}P§8)")
             }
             add("§r")
-            when {
-                isFull           -> add("  §7잔여 포인트 §8: §e${data.statPoints}P")
-                data.statPoints > 0 -> add("  §7잔여 포인트 §8: §e${data.statPoints}P")
-                else             -> add("  §c✖ §f스텟 포인트가 없습니다")
+            if (isFull || data.statPoints > 0) {
+                add("  §7잔여 포인트 §8: §e${data.statPoints}P")
+            } else {
+                add("  §c✖ §f스텟 포인트가 없습니다")
             }
         }
 
@@ -139,8 +139,10 @@ class StatView(private val rpg: CRRPGCorePlugin)
     }
 
     // ── 실제 분배 가능 수량 (최대 10, 포인트·최대치 동시 고려) ──────────────
-    private fun calcAvail(player: Player, type: StatType): Int {
-        val data = rpg.levelManager.getPlayerData(player)
+    private fun calcAvail(player: Player, type: StatType): Int =
+        calcAvail(rpg.levelManager.getPlayerData(player), type)
+
+    private fun calcAvail(data: PlayerData, type: StatType): Int {
         val sm   = rpg.statManager
         val left = maxOf(type, sm) - currentOf(data, type)
         return data.statPoints.coerceAtMost(10).coerceAtMost(left).coerceAtLeast(0)

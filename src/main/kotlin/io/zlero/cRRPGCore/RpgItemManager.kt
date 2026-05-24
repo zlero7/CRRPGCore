@@ -284,7 +284,7 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
         pdc.set(keyBound, PersistentDataType.STRING, owner.toString())
         val lore = (meta.lore ?: mutableListOf()).toMutableList()
         lore.add("§r")
-        lore.add("  §c※ §7귀속된 아이템 §8(§f$ownerName§8)")
+        lore.add("$BOUND_LORE_PREFIX §7귀속된 아이템 §8(§f$ownerName§8)")
         meta.lore = lore
         item.itemMeta = meta
     }
@@ -336,5 +336,6 @@ class RpgItemManager(private val plugin: CRRPGCorePlugin) {
 
     companion object {
         private val COLOR_REGEX = Regex("§[0-9a-fk-or]")
+        const val BOUND_LORE_PREFIX = "  §c※"
     }
 }

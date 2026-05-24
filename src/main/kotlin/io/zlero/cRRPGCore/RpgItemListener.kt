@@ -95,9 +95,11 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
             return
         }
 
-        val attacker = event.damager as? Player
+        val attacker        = event.damager as? Player
+        val attackerWepStat = attacker?.let { plugin.rpgItemManager.getWeaponStat(it.inventory.itemInMainHand) }
+
         val penPct = if (attacker != null) {
-            val wPen = plugin.rpgItemManager.getWeaponStat(attacker.inventory.itemInMainHand)?.penetration ?: 0.0
+            val wPen = attackerWepStat?.penetration ?: 0.0
             val jPen = plugin.jewelManager.getTotalStats(attacker)[JewelStatType.PENETRATION] ?: 0.0
             wPen + jPen
         } else 0.0
@@ -108,9 +110,8 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
         if (effectiveDef > 0.0) event.damage *= (1.0 - effectiveDef / 100.0)
 
         if (attacker != null) {
-            val wStat   = plugin.rpgItemManager.getWeaponStat(attacker.inventory.itemInMainHand)
             val jewelLs = plugin.jewelManager.getTotalStats(attacker)[JewelStatType.LIFE_STEAL] ?: 0.0
-            val totalLs = (wStat?.lifeSteal ?: 0.0) + jewelLs
+            val totalLs = (attackerWepStat?.lifeSteal ?: 0.0) + jewelLs
             val actualDmg = event.damage
 
             if (totalLs > 0.0) {
@@ -166,25 +167,27 @@ class RpgItemListener(private val plugin: CRRPGCorePlugin) {
         }
     }
 
-    @Subscribe(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun onPickup(event: org.bukkit.event.entity.EntityPickupItemEvent) {
+    // RPG 아이템 최초 획득 시 자동 귀속 — 인벤토리 꽉 참(cancelled) 상태에서도 귀속은 반드시 수행
+    @Subscribe(priority = EventPriority.LOW, ignoreCancelled = false)
+    fun onPickupBind(event: org.bukkit.event.entity.EntityPickupItemEvent) {
         val player = event.entity as? Player ?: return
         val item   = event.item.itemStack
-
-        // 이미 귀속된 아이템 — 소유자 확인
-        if (plugin.rpgItemManager.isBound(item)) {
-            val owner = plugin.rpgItemManager.getBoundOwner(item) ?: return
-            if (owner != player.uniqueId) {
-                event.isCancelled = true
-                player.sendMessage("§c[!] §c다른 플레이어에게 귀속된 아이템입니다.")
-            }
-            return
-        }
-
-        // RPG 아이템 최초 획득 시 자동 귀속
-        if (plugin.rpgItemManager.isRpgItem(item)) {
+        if (!plugin.rpgItemManager.isBound(item) && plugin.rpgItemManager.isRpgItem(item)) {
             plugin.rpgItemManager.bindItem(item, player.uniqueId, player.name)
-            event.item.itemStack = item   // 엔티티 ItemStack 갱신
+            event.item.itemStack = item   // 엔티티 ItemStack 갱신 (Bukkit ItemStack은 값 타입)
+        }
+    }
+
+    // 귀속 제한 — 실제로 줍는 경우에만 소유자 검사
+    @Subscribe(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onPickupRestrict(event: org.bukkit.event.entity.EntityPickupItemEvent) {
+        val player = event.entity as? Player ?: return
+        val item   = event.item.itemStack
+        if (!plugin.rpgItemManager.isBound(item)) return
+        val owner = plugin.rpgItemManager.getBoundOwner(item)
+        if (owner == null || owner != player.uniqueId) {
+            event.isCancelled = true
+            player.sendMessage("§c[!] §c다른 플레이어에게 귀속된 아이템입니다.")
         }
     }
 }

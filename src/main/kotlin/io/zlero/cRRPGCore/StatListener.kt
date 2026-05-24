@@ -25,7 +25,7 @@ class StatListener(private val plugin: CRRPGCorePlugin) {
      * LOWEST 우선순위 → 가장 먼저 처리하여 회피 시 이벤트 취소
      * EntityDamageByEntityEvent로 제한 → 낙하·화재·폭발 피해는 회피 대상 제외
      */
-    @Subscribe(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @Subscribe(priority = EventPriority.LOWEST)
     fun onDamageReceive(event: EntityDamageByEntityEvent) {
         val victim = event.entity as? Player ?: return
         if (plugin.statManager.rollDodge(victim)) {
