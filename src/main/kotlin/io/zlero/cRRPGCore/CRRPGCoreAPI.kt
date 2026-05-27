@@ -1,5 +1,6 @@
 package io.zlero.cRRPGCore
 
+import io.zlero.cRRPGCore.model.StatType
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.UUID

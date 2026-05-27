@@ -1,6 +1,14 @@
 package io.zlero.cRRPGCore
 
 import io.zlero.cRFramework.CRPlugin
+import io.zlero.cRRPGCore.command.*
+import io.zlero.cRRPGCore.config.*
+import io.zlero.cRRPGCore.db.*
+import io.zlero.cRRPGCore.event.*
+import io.zlero.cRRPGCore.listener.*
+import io.zlero.cRRPGCore.manager.*
+import io.zlero.cRRPGCore.scroll.*
+import io.zlero.cRRPGCore.view.*
 import net.milkbowl.vault.economy.Economy
 
 class CRRPGCorePlugin : CRPlugin() {
